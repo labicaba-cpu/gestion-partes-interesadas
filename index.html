@@ -202,6 +202,20 @@ body{background:var(--off);}
 .mat-left{width:55%;border-right:1px solid var(--lgray);display:flex;flex-direction:column;}
 .mat-right{flex:1;display:flex;flex-direction:column;background:#F8FAFF;}
 .mat-toolbar{padding:10px 13px;border-bottom:1px solid var(--lgray);display:flex;gap:7px;flex-wrap:wrap;background:white;}
+
+/* ══ PANEL DE AVANCE DE REVISIÓN ══ */
+.rev-panel{background:white;border:1px solid var(--lgray);border-radius:12px;padding:14px 16px;margin-bottom:12px;
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+.rev-panel .rev-pct-wrap{flex-shrink:0;}
+.rev-panel .rev-pct{font-size:26px;font-weight:800;color:var(--navy,#0D3B66);line-height:1;}
+.rev-panel .rev-pct-lbl{font-size:9.5px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-top:2px;}
+.rev-bar-col{flex:1;min-width:160px;}
+.rev-bar-track{width:100%;height:9px;background:#EEF2F6;border-radius:5px;overflow:hidden;}
+.rev-bar-fill{height:100%;background:linear-gradient(90deg,#43A047,#66BB6A);border-radius:5px;transition:width .35s ease;}
+.rev-counts{display:flex;gap:14px;flex-wrap:wrap;}
+.rev-count{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dark);white-space:nowrap;}
+.rev-count .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.rev-count b{font-size:13px;}
 .mti{padding:7px 10px;border:1.5px solid var(--lgray);border-radius:8px;font-size:11px;background:white;outline:none;flex:1;min-width:70px;transition:border .2s;}
 .mti:focus{border-color:var(--blue);}
 .tbl-wrap{flex:1;overflow:auto;}
@@ -234,6 +248,20 @@ body{background:var(--off);}
 .det-btn.save:hover{background:#1B5E20;}
 .det-btn.cancel{border-color:var(--lgray);color:var(--gray);background:white;}
 .det-btn.cancel:hover{background:var(--lgray);}
+.det-btn.markok{border-color:#43A047;color:#2E7D32;background:#DCFCE7;}
+.det-btn.markok:hover{background:#BBF7D0;}
+.det-btn.markundo{border-color:#F59E0B;color:#92400E;background:#FEF3C7;}
+.det-btn.markundo:hover{background:#FDE68A;}
+.rev-log{margin-top:12px;border-top:1px dashed var(--lgray);padding-top:10px;}
+.rev-log-hdr{font-size:9.5px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.rev-log-empty{font-size:11px;color:#B0BEC5;font-style:italic;}
+.rev-log-item{padding:6px 0;border-bottom:1px solid #F5F7FA;font-size:10.5px;}
+.rev-log-item:last-child{border-bottom:none;}
+.rev-log-item .rlm{font-weight:700;color:var(--navy,#0D3B66);margin-bottom:2px;}
+.rev-log-item .rlrow{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
+.rev-log-item .rlu{color:var(--gray);}
+.rev-log-item .rlu::before{content:"👤 ";}
+.rev-log-item .rld{color:#B0BEC5;margin-left:auto;white-space:nowrap;}
 .ef-text{width:100%;padding:7px 10px;border:1.5px solid var(--blue);border-radius:8px;font-size:12px;color:var(--dark);background:white;outline:none;font-family:"Segoe UI",Arial,sans-serif;transition:border .2s;resize:vertical;}
 .ef-text:focus{border-color:var(--b2);box-shadow:0 0 0 3px rgba(21,101,192,.1);}
 .ef-select{width:100%;padding:7px 10px;border:1.5px solid var(--blue);border-radius:8px;font-size:12px;color:var(--dark);background:white;outline:none;cursor:pointer;}
@@ -357,6 +385,10 @@ body{background:var(--off);}
 .cbtn:hover{opacity:.85;}
 .cbtn.cancel{background:var(--lgray);color:var(--gray);}
 .cbtn.danger{background:var(--amber);color:white;}
+.cbtn.ok{background:#43A047;color:white;}
+.resp-input{width:100%;border:1.5px solid var(--lgray);border-radius:9px;padding:9px 12px;font-size:12.5px;outline:none;margin-top:4px;box-sizing:border-box;}
+.resp-input:focus{border-color:var(--blue);}
+.resp-err{display:none;color:var(--red);font-size:10.5px;margin-top:6px;text-align:left;}
 
 /* TOAST */
 .toast{position:fixed;bottom:22px;right:22px;color:white;padding:12px 20px;border-radius:11px;font-size:12px;font-weight:600;z-index:999;display:none;align-items:center;gap:9px;box-shadow:0 6px 24px rgba(0,0,0,.28);max-width:340px;}
@@ -491,6 +523,20 @@ body{background:var(--off);}
       </div>
       <button class="tbtn green" onclick="exportarExcel()">⬇ Descargar todo (.xlsx)</button>
     </div>
+    <div class="rev-panel" id="revPanel">
+      <div class="rev-pct-wrap">
+        <div class="rev-pct" id="revPct">0%</div>
+        <div class="rev-pct-lbl">Analizado</div>
+      </div>
+      <div class="rev-bar-col">
+        <div class="rev-bar-track"><div class="rev-bar-fill" id="revBarFill" style="width:0%"></div></div>
+        <div class="rev-counts" style="margin-top:8px">
+          <div class="rev-count"><span class="dot" style="background:#43A047"></span>Analizados: <b id="revCountOk">0</b></div>
+          <div class="rev-count"><span class="dot" style="background:#F59E0B"></span>Pendientes: <b id="revCountPend">0</b></div>
+          <div class="rev-count"><span class="dot" style="background:#90A4AE"></span>Total: <b id="revCountTotal">0</b></div>
+        </div>
+      </div>
+    </div>
     <div class="vtabs">
       <button class="vtab ag" id="vt0" onclick="swV(0)">📊 1. Evaluación de Pertinencia <span class="vcnt g" id="vc0">—</span></button>
       <button class="vtab" id="vt1" onclick="swV(1)">📋 2. Partes Interesadas <span class="vcnt b" id="vc1">—</span></button>
@@ -502,6 +548,11 @@ body{background:var(--off);}
           <select class="mti" id="fGer" onchange="filtrar()"><option value="">🏢 Todas las gerencias</option></select>
           <select class="mti" id="fSubarea" onchange="filtrar()"><option value="">🔹 Todas las sub-áreas</option></select>
           <input type="text" class="mti" id="fQ" placeholder="🔍 Buscar..." oninput="filtrar()" style="flex:2;">
+          <select class="mti" id="fRevision" onchange="filtrar()" style="flex:0 0 auto;min-width:140px" title="Filtrar por estado de revisión (Evaluación de Pertinencia)">
+            <option value="">🔍 Estado: Todos</option>
+            <option value="revisado">✅ Revisados</option>
+            <option value="pendiente">⏳ Pendientes</option>
+          </select>
           <span class="sync-bdg" id="syncBdg">✓ — activos</span>
         </div>
         <div class="tbl-wrap">
@@ -523,15 +574,15 @@ body{background:var(--off);}
 
       <div class="nreg-hdr">
         <h2>➕ Nuevo registro — Partes Interesadas</h2>
-        <p>Complete el cuestionario paso a paso. Al guardar, el registro se incorporará a ambas matrices y se enviará una notificación automática. Los campos con <span style="color:#FCA5A5">*</span> son obligatorios.</p>
+        <p>Complete el cuestionario paso a paso. Al guardar, el registro se incorporará a ambas matrices y se preparará un correo de notificación para que usted lo revise y envíe. Los campos con <span style="color:#FCA5A5">*</span> son obligatorios.</p>
       </div>
 
       <!-- Pantalla de éxito -->
       <div class="nreg-success" id="nregSuccess">
-        <div style="font-size:52px;margin-bottom:14px">✅</div>
-        <h3 style="font-size:18px;font-weight:700;color:#166534;margin-bottom:8px">Registro guardado exitosamente</h3>
+        <div style="font-size:52px;margin-bottom:14px" id="successIcon">✅</div>
+        <h3 style="font-size:18px;font-weight:700;color:#166534;margin-bottom:8px" id="successTitle">Registro guardado exitosamente</h3>
         <p style="font-size:13px;color:#166534;margin-bottom:6px;line-height:1.6" id="successMsg">El registro fue guardado en ambas matrices.</p>
-        <p style="font-size:11.5px;color:#6B7280;margin-bottom:22px">Notificación enviada a: <strong>lcaballero@nacionalvida.com.bo</strong></p>
+        <p style="font-size:11.5px;color:#6B7280;margin-bottom:22px" id="successSub">Notificación enviada a: <strong>lcaballero@nacionalvida.com.bo</strong></p>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
           <button onclick="resetNuevoForm()" style="background:white;border:1.5px solid #D1D5DB;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;">+ Nuevo registro</button>
           <button onclick="nav('matriz',document.querySelectorAll('.tnav')[1])" style="background:linear-gradient(135deg,var(--navy),var(--blue));color:white;border:none;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;">Ver Matriz →</button>
@@ -817,6 +868,21 @@ body{background:var(--off);}
   </div>
 </div>
 
+<!-- MODAL: IDENTIFICAR RESPONSABLE DE LA REVISIÓN -->
+<div class="overlay" id="respOverlay" onclick="if(event.target===this)closeResp()">
+  <div class="conf">
+    <div class="conf-ico">🖊️</div>
+    <div class="conf-title">Identifica al responsable</div>
+    <div class="conf-msg">No se pudo identificar automáticamente a un usuario con sesión iniciada. Ingresa el nombre del responsable para poder registrar este cambio de estado.</div>
+    <input type="text" class="resp-input" id="respInput" placeholder="Nombre y apellido del responsable" onkeydown="if(event.key==='Enter')confirmResp()">
+    <div class="resp-err" id="respErr">Este campo es obligatorio. No se puede guardar el cambio sin identificar al responsable.</div>
+    <div class="conf-btns" style="margin-top:16px">
+      <button class="cbtn cancel" onclick="closeResp()">Cancelar</button>
+      <button class="cbtn ok" onclick="confirmResp()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"><span id="tIco">✓</span> <span id="tMsg">—</span></div>
 
@@ -922,7 +988,8 @@ function loadOffline(){
   document.getElementById("loginScreen").style.display="none";
   document.getElementById("app").style.display="block";
   document.getElementById("loadingScreen").style.display="none";
-  buildFilters(); updateStats(); filtrar(); renderSeguimiento();
+  normalizeRevisionFields();
+  buildFilters(); updateStats(); filtrar(); renderSeguimiento(); updateRevisionStats();
   showToast("Datos cargados — "+PI_DATA.filter(r=>r.activo!==false).length+" registros activos","ok");
 }
 function buildFilters(){
@@ -951,6 +1018,140 @@ function updateStats(){
 }
 
 // ══════════════════════════════════════════════════════
+//  REVISIÓN / TRAZABILIDAD DEL ANÁLISIS
+// ══════════════════════════════════════════════════════
+const REV_STATE_KEY="sgc_revision_state_v1";
+const REV_LOG_KEY="sgc_revision_log_v1";
+let REVISION_LOG=[];
+let pendingResp=null;
+
+// Devuelve el nombre del usuario con sesión iniciada, o "" si no puede identificarse.
+function currentUserAuto(){
+  if(spUser)return spUser.name||spUser.username||"";
+  return "";
+}
+function fmtFechaHora(d){
+  const fecha=d.toLocaleDateString("es-BO",{day:"2-digit",month:"long",year:"numeric"});
+  const hora=d.toLocaleTimeString("es-BO",{hour:"2-digit",minute:"2-digit"});
+  return `${fecha}, ${hora}`;
+}
+function loadRevisionState(){
+  try{const raw=localStorage.getItem(REV_STATE_KEY);return raw?JSON.parse(raw):{};}catch(e){return {};}
+}
+function saveRevisionState(state){
+  try{localStorage.setItem(REV_STATE_KEY,JSON.stringify(state));}catch(e){}
+}
+function loadRevisionLog(){
+  try{const raw=localStorage.getItem(REV_LOG_KEY);return raw?JSON.parse(raw):[];}catch(e){return [];}
+}
+function saveRevisionLog(){
+  try{localStorage.setItem(REV_LOG_KEY,JSON.stringify(REVISION_LOG));}catch(e){}
+}
+// Aplica el estado de revisión persistido (o valores por defecto) sobre AP_DATA.
+function normalizeRevisionFields(){
+  const state=loadRevisionState();
+  REVISION_LOG=loadRevisionLog();
+  AP_DATA.forEach(r=>{
+    const s=state[r.id];
+    r.revisado=s?!!s.revisado:!!r.revisado;
+    r.revisadoPor=s?(s.revisadoPor||""):(r.revisadoPor||"");
+    r.fechaRevision=s?(s.fechaRevision||""):(r.fechaRevision||"");
+    r.requiereNuevaRevision=s?!!s.requiereNuevaRevision:!!r.requiereNuevaRevision;
+    r.modificadoPor=s?(s.modificadoPor||""):(r.modificadoPor||"");
+    r.ultimaModificacion=s?(s.ultimaModificacion||""):(r.ultimaModificacion||"");
+  });
+}
+function persistCurrentRevisionState(){
+  const state={};
+  AP_DATA.forEach(r=>{state[r.id]={revisado:!!r.revisado,revisadoPor:r.revisadoPor||"",fechaRevision:r.fechaRevision||"",requiereNuevaRevision:!!r.requiereNuevaRevision,modificadoPor:r.modificadoPor||"",ultimaModificacion:r.ultimaModificacion||""};});
+  saveRevisionState(state);
+}
+// Etiqueta legible del estado de revisión actual de un registro.
+function estadoRevisionLabel(ap){
+  if(ap.revisado)return "Analizado";
+  if(ap.requiereNuevaRevision)return "Pendiente de revisión (requiere nueva revisión)";
+  return "Pendiente de revisión";
+}
+// Agrega una entrada al historial de revisión (nunca se eliminan entradas anteriores).
+function logRevision(ap,usuario,fecha,estadoAnterior,estadoNuevo){
+  REVISION_LOG.unshift({id:ap.id,parte:ap.parte,usuario,fecha,estadoAnterior,estadoNuevo});
+  saveRevisionLog();
+}
+// Solicita el nombre del responsable de la acción: si hay sesión iniciada, lo obtiene
+// automáticamente; si no, exige un nombre obligatorio antes de continuar (no se puede
+// cancelar el requisito, solo cancelar la acción completa).
+function requestResponsableName(onConfirm){
+  const auto=currentUserAuto();
+  if(auto){onConfirm(auto);return;}
+  pendingResp={onConfirm};
+  document.getElementById("respInput").value="";
+  document.getElementById("respErr").style.display="none";
+  document.getElementById("respOverlay").classList.add("open");
+  setTimeout(()=>{const el=document.getElementById("respInput");if(el)el.focus();},50);
+}
+function confirmResp(){
+  const v=document.getElementById("respInput").value.trim();
+  if(!v){document.getElementById("respErr").style.display="block";return;}
+  const cb=pendingResp&&pendingResp.onConfirm;
+  document.getElementById("respOverlay").classList.remove("open");
+  pendingResp=null;
+  if(cb)cb(v);
+}
+function closeResp(){document.getElementById("respOverlay").classList.remove("open");pendingResp=null;}
+
+// Actualiza el panel de avance (% analizado, contadores) sobre el total de la matriz activa.
+function updateRevisionStats(){
+  const apAct=AP_DATA.filter(r=>r.activo!==false);
+  const total=apAct.length;
+  const ok=apAct.filter(r=>r.revisado).length;
+  const pend=total-ok;
+  const pct=total?Math.round((ok/total)*100):0;
+  const elPct=document.getElementById("revPct");
+  if(!elPct)return; // el panel solo existe en la pantalla de Matriz
+  elPct.textContent=pct+"%";
+  document.getElementById("revBarFill").style.width=pct+"%";
+  document.getElementById("revCountOk").textContent=ok;
+  document.getElementById("revCountPend").textContent=pend;
+  document.getElementById("revCountTotal").textContent=total;
+}
+function marcarRevisado(apId){
+  const ap=AP_DATA.find(x=>x.id===apId);
+  if(!ap){showToast("Registro no encontrado","err");return;}
+  requestResponsableName(usuario=>{
+    const fecha=fmtFechaHora(new Date());
+    const estadoAnterior=estadoRevisionLabel(ap);
+    ap.revisado=true;ap.revisadoPor=usuario;ap.fechaRevision=fecha;ap.requiereNuevaRevision=false;
+    logRevision(ap,usuario,fecha,estadoAnterior,"Analizado");
+    persistCurrentRevisionState();
+    updateRevisionStats();filtrar();
+    if(selId!==null)renderDetailView(selId,selType);
+    showToast("Registro marcado como analizado ✓","ok");
+  });
+}
+function desmarcarRevisado(apId){
+  const ap=AP_DATA.find(x=>x.id===apId);
+  if(!ap){showToast("Registro no encontrado","err");return;}
+  requestResponsableName(usuario=>{
+    const fecha=fmtFechaHora(new Date());
+    const estadoAnterior=estadoRevisionLabel(ap);
+    ap.revisado=false;ap.requiereNuevaRevision=false;
+    logRevision(ap,usuario,fecha,estadoAnterior,"Pendiente de revisión");
+    persistCurrentRevisionState();
+    updateRevisionStats();filtrar();
+    if(selId!==null)renderDetailView(selId,selType);
+    showToast("Registro revertido a pendiente","warn");
+  });
+}
+function renderRevLog(apId){
+  const entries=REVISION_LOG.filter(e=>e.id===apId);
+  if(!entries.length)return `<div class="rev-log-empty">Sin movimientos registrados todavía.</div>`;
+  return entries.map(e=>`<div class="rev-log-item">
+    <div class="rlm">${e.estadoAnterior?`${e.estadoAnterior} → `:""}${e.estadoNuevo}</div>
+    <div class="rlrow"><span class="rlu">${e.usuario}</span><span class="rld">${e.fecha}</span></div>
+  </div>`).join("");
+}
+
+// ══════════════════════════════════════════════════════
 //  FILTROS Y TABLA
 // ══════════════════════════════════════════════════════
 function filtrar(){
@@ -958,12 +1159,15 @@ function filtrar(){
   const g=document.getElementById("fGer").value;
   const sub=document.getElementById("fSubarea").value;
   const q=document.getElementById("fQ").value.toLowerCase().trim();
+  const rev=document.getElementById("fRevision")?document.getElementById("fRevision").value:"";
   if(curView===0){
     filtered=AP_DATA.filter(r=>{
       if(r.activo===false)return false;
       if(p&&r.parte!==p)return false;
       if(g){const pi=PI_DATA.find(x=>x.parte===r.parte&&x.activo!==false);if(!pi||pi.gerencia!==g)return false;}
       if(sub&&r.subarea!==sub)return false;
+      if(rev==="revisado"&&!r.revisado)return false;
+      if(rev==="pendiente"&&r.revisado)return false;
       if(q){const h=r.parte.toLowerCase().includes(q)||(r.requisito||"").toLowerCase().includes(q)||(r.subarea||"").toLowerCase().includes(q)||(r.tema||"").toLowerCase().includes(q)||(r.justificacion||"").toLowerCase().includes(q);if(!h)return false;}
       return true;
     });
@@ -973,6 +1177,7 @@ function filtrar(){
       if(p&&r.parte!==p)return false;
       if(g&&r.gerencia!==g)return false;
       if(sub&&r.subarea!==sub)return false;
+      if(rev){const ap=AP_DATA.find(x=>x.parte===r.parte&&x.activo!==false);const isRev=ap?!!ap.revisado:false;if(rev==="revisado"&&!isRev)return false;if(rev==="pendiente"&&isRev)return false;}
       if(q){const h=r.parte.toLowerCase().includes(q)||(r.gerencia||"").toLowerCase().includes(q)||(r.subarea||"").toLowerCase().includes(q)||(r.requisito||"").toLowerCase().includes(q)||(r.proceso||"").toLowerCase().includes(q)||(r.responsable||"").toLowerCase().includes(q);if(!h)return false;}
       return true;
     });
@@ -983,6 +1188,7 @@ function filtrar(){
   document.getElementById("vc1").textContent=piC;
   document.getElementById("syncBdg").textContent="✓ "+filtered.length+" activo"+(filtered.length!==1?"s":"");
   renderTable();
+  updateRevisionStats();
 }
 
 function swV(i){
@@ -995,12 +1201,13 @@ function swV(i){
 function renderTable(){
   const th=document.getElementById("tHead"),tb=document.getElementById("tBody");
   if(curView===0){
-    th.innerHTML=`<tr><th style="width:19%">Parte interesada</th><th style="width:24%">Requisito identificado</th><th style="width:14%">Tema asociado</th><th style="width:11%">C. Climático</th><th style="width:10%">Alcance</th><th style="width:10%">¿SGC?</th><th style="width:12%">Resultado</th></tr>`;
+    th.innerHTML=`<tr><th style="width:17%">Parte interesada</th><th style="width:20%">Requisito identificado</th><th style="width:12%">Tema asociado</th><th style="width:10%">C. Climático</th><th style="width:9%">Alcance</th><th style="width:9%">¿SGC?</th><th style="width:11%">Resultado</th><th style="width:12%">Revisión</th></tr>`;
     tb.innerHTML=filtered.map(r=>{
       const sgcC=r.sgc==="Sí"?"b":r.sgc==="Parcial"?"a":"sc";
       const resC=r.resultado==="Pasa a matriz principal"?"g":r.resultado?"a":"sc";
       const ccC=r.cc==="Directa"?"g":r.cc==="Indirecta"?"a":"sc";
       const resLbl=r.resultado==="Pasa a matriz principal"?"Pasa ✓":r.resultado||"—";
+      const revTitle=r.revisado?`Revisado por ${r.revisadoPor||"—"} el ${r.fechaRevision||"—"}`:"Pendiente de revisión";
       return `<tr onclick="selRow(${r.id},'ap')" id="row_ap_${r.id}" class="${selId===r.id&&curView===0?"sel":""}">
         <td style="font-weight:700;color:var(--blue)">${r.parte}</td>
         <td style="color:var(--gray)">${(r.requisito||"").substring(0,44)}${(r.requisito||"").length>44?"…":""}</td>
@@ -1009,18 +1216,25 @@ function renderTable(){
         <td>${r.alcance?`<span class="bdg sc">${r.alcance}</span>`:"<span style='color:#ccc'>—</span>"}</td>
         <td>${r.sgc?`<span class="bdg ${sgcC}">${r.sgc}</span>`:"<span style='color:#ccc'>—</span>"}</td>
         <td><span class="bdg ${resC}" style="font-size:8.5px">${resLbl}</span></td>
+        <td title="${revTitle}">${r.revisado?`<span class="bdg g">✅ Revisado</span>`:`<span class="bdg a">⏳ Pendiente</span>`}</td>
       </tr>`;
-    }).join("")||noRows(7);
+    }).join("")||noRows(8);
   }else{
-    th.innerHTML=`<tr><th style="width:17%">Parte interesada</th><th style="width:14%">Gerencia / Área</th><th style="width:14%">Sub-Área</th><th style="width:20%">Requisito identificado</th><th style="width:16%">Responsable</th><th style="width:19%">Proceso</th></tr>`;
-    tb.innerHTML=filtered.map(r=>`<tr onclick="selRow(${r.id},'pi')" id="row_pi_${r.id}" class="${selId===r.id&&curView===1?"sel":""}">
+    th.innerHTML=`<tr><th style="width:16%">Parte interesada</th><th style="width:13%">Gerencia / Área</th><th style="width:13%">Sub-Área</th><th style="width:18%">Requisito identificado</th><th style="width:14%">Responsable</th><th style="width:16%">Proceso</th><th style="width:10%">Revisión</th></tr>`;
+    tb.innerHTML=filtered.map(r=>{
+      const ap=AP_DATA.find(x=>x.parte===r.parte&&x.activo!==false);
+      const revisado=ap?!!ap.revisado:false;
+      const revTitle=ap?(revisado?`Revisado por ${ap.revisadoPor||"—"} el ${ap.fechaRevision||"—"}`:"Pendiente de revisión"):"Sin análisis de pertinencia asociado";
+      return `<tr onclick="selRow(${r.id},'pi')" id="row_pi_${r.id}" class="${selId===r.id&&curView===1?"sel":""}">
       <td style="font-weight:700;color:var(--blue)">${r.parte}</td>
       <td>${r.gerencia||"—"}</td>
       <td style="color:var(--gray)">${r.subarea||"—"}</td>
       <td style="color:var(--gray)">${(r.requisito||"").substring(0,44)}${(r.requisito||"").length>44?"…":""}</td>
       <td style="color:var(--gray)">${(r.responsable||"").substring(0,26)}${(r.responsable||"").length>26?"…":""}</td>
       <td style="color:var(--gray)">${(r.proceso||"").replace("Gestión de ","").replace("Gestión ","").substring(0,22)}</td>
-    </tr>`).join("")||noRows(6);
+      <td title="${revTitle}">${ap?(revisado?`<span class="bdg g">✅</span>`:`<span class="bdg a">⏳</span>`):"<span style='color:#ccc'>—</span>"}</td>
+    </tr>`;
+    }).join("")||noRows(7);
   }
 }
 function noRows(c){return `<tr><td colspan="${c}" style="text-align:center;color:#90A4AE;padding:22px;font-size:12px">Sin registros activos</td></tr>`;}
@@ -1126,6 +1340,25 @@ function renderDetailView(id,type){
         </div>
         ${df("Evidencia / seguimiento",pi.evidencia,"pre")}
         ${pi.observaciones?df("Observaciones o cambios relevantes",pi.observaciones):""}
+      </div>
+      <!-- 7. Estado de Revisión -->
+      <div class="blk" style="background:${ap.id?(ap.revisado?"#F0FDF4":(ap.requiereNuevaRevision?"#FFF7ED":"#FFFBEB")):"transparent"}">
+        <div class="bk-hdr"><div class="bk-dot" style="background:${ap.id?(ap.revisado?"#43A047":(ap.requiereNuevaRevision?"#FB923C":"#F59E0B")):"#90A4AE"}"></div><div class="bk-lbl" style="color:${ap.id?(ap.revisado?"#2E7D32":(ap.requiereNuevaRevision?"#9A3412":"#B45309")):"var(--gray)"}">🔍 Estado de Revisión</div></div>
+        ${ap.id?`
+          <div class="df"><div class="dlbl">Estado actual</div><div>${ap.revisado?'<span class="bdg g">✅ Analizado</span>':(ap.requiereNuevaRevision?'<span class="bdg a">⚠️ Requiere nueva revisión</span>':'<span class="bdg a">⏳ Pendiente de revisión</span>')}</div></div>
+          ${(!ap.revisado&&ap.requiereNuevaRevision)?`<div style="font-size:11px;color:#9A3412;background:#FFEDD5;border-radius:6px;padding:7px 10px;margin:8px 0">⚠️ Este registro fue modificado después de haber sido analizado, por lo que requiere una nueva revisión.</div>`:""}
+          <div class="drow2">${df("Último responsable que revisó",ap.revisadoPor)}${df("Fecha de la última revisión",ap.fechaRevision)}</div>
+          <div class="drow2">${df("Última modificación por",ap.modificadoPor)}${df("Fecha de la última modificación",ap.ultimaModificacion)}</div>
+          <div style="margin-top:10px">
+            ${ap.revisado
+              ?`<button class="det-btn markundo" onclick="desmarcarRevisado(${ap.id})">↩ Revertir a pendiente</button>`
+              :`<button class="det-btn markok" onclick="marcarRevisado(${ap.id})">✅ Marcar como analizado</button>`}
+          </div>
+          <div class="rev-log">
+            <div class="rev-log-hdr">Historial de revisión (trazabilidad)</div>
+            ${renderRevLog(ap.id)}
+          </div>
+        `:`<div style="font-size:11.5px;color:var(--gray)">Este registro no tiene un análisis de pertinencia asociado, por lo que no se puede registrar su revisión.</div>`}
       </div>
     </div>`;
 }
@@ -1240,12 +1473,70 @@ function guardarCambios(id,type){
   let rAP,rPI;
   if(type==="ap"){rAP=AP_DATA.find(x=>x.id===id);rPI=PI_DATA.find(x=>x.parte===rAP.parte&&x.activo!==false);}
   else{rPI=PI_DATA.find(x=>x.id===id);rAP=AP_DATA.find(x=>x.parte===rPI.parte&&x.activo!==false);}
-  if(rAP){const eSgc=gv("e_sgc");const eRes=eSgc==="Sí"?"Pasa a Matriz":eSgc==="Parcial"?"Parcial / Fuera del SGC":eSgc==="No"?"No pasa":rAP.resultado||"";
-  Object.assign(rAP,{requisito,subarea:gv("e_ap_subarea")||rAP.subarea,fuente:gv("e_fuente"),tema:gv("e_tema"),cc:gv("e_cc"),alcance:gv("e_alcance"),sgc:eSgc,justificacion:gv("e_justificacion"),resultado:eRes});}
-  if(rPI){Object.assign(rPI,{requisito,normativa:gv("e_normativa"),proceso:gv("e_proceso"),responsable:gv("e_responsable"),evidencia:gv("e_evidencia"),observaciones:gv("e_observaciones")});}
-  editMode=false;editId=null;editType=null;
-  filtrar();renderDetailView(id,type);
-  showToast("Cambios guardados en ambas matrices ✓","ok");
+
+  const eraAnalizado=!!(rAP&&rAP.revisado);
+
+  const aplicarCambios=async(usuario)=>{
+    const fecha=fmtFechaHora(new Date());
+    if(rAP){
+      const estadoAnterior=eraAnalizado?estadoRevisionLabel(rAP):null;
+      const eSgc=gv("e_sgc");const eRes=eSgc==="Sí"?"Pasa a Matriz":eSgc==="Parcial"?"Parcial / Fuera del SGC":eSgc==="No"?"No pasa":rAP.resultado||"";
+      Object.assign(rAP,{requisito,subarea:gv("e_ap_subarea")||rAP.subarea,fuente:gv("e_fuente"),tema:gv("e_tema"),cc:gv("e_cc"),alcance:gv("e_alcance"),sgc:eSgc,justificacion:gv("e_justificacion"),resultado:eRes});
+      rAP.modificadoPor=usuario;rAP.ultimaModificacion=fecha;
+      if(eraAnalizado){
+        rAP.revisado=false;rAP.requiereNuevaRevision=true;
+        logRevision(rAP,usuario,fecha,estadoAnterior,"Pendiente de revisión (modificado tras análisis)");
+      }
+      persistCurrentRevisionState();
+    }
+    if(rPI){Object.assign(rPI,{requisito,normativa:gv("e_normativa"),proceso:gv("e_proceso"),responsable:gv("e_responsable"),evidencia:gv("e_evidencia"),observaciones:gv("e_observaciones")});}
+    editMode=false;editId=null;editType=null;
+    updateRevisionStats();filtrar();renderDetailView(id,type);
+
+    // Preparar correo electrónico (mailto) con los cambios — sin API, sin backend, sin servicios externos.
+    const parte=(rAP&&rAP.parte)||(rPI&&rPI.parte)||"";
+    const asunto=`Actualización de parte interesada – ${parte}`;
+    const cuerpo=
+`Este correo corresponde a la actualización de un registro existente.
+
+Parte interesada: ${parte}
+Necesidad o expectativa (requisito) identificada: ${requisito}
+Fuente de identificación: ${(rAP&&rAP.fuente)||"No indicado"}
+Referencia normativa o criterio aplicable: ${(rPI&&rPI.normativa)||"No indicado"}
+Tema asociado: ${(rAP&&rAP.tema)||"No indicado"}
+Relación con cambio climático: ${(rAP&&rAP.cc)||"No indicado"}
+Pertinencia para el SGC: ${(rAP&&rAP.sgc)||"No indicado"}
+Justificación: ${(rAP&&rAP.justificacion)||"No indicado"}
+Resultado: ${(rAP&&rAP.resultado)||"No indicado"}
+Responsable de seguimiento: ${(rPI&&rPI.responsable)||"No indicado"}
+Evidencia o seguimiento: ${(rPI&&rPI.evidencia)||"No indicado"}
+Observaciones: ${(rPI&&rPI.observaciones)||"Ninguna"}
+Gerencia o área: ${(rPI&&rPI.gerencia)||"No indicado"}
+Subárea: ${(rAP&&rAP.subarea)||(rPI&&rPI.subarea)||"No indicado"}
+Proceso: ${(rPI&&rPI.proceso)||"No indicado"}
+Oficina: ${(rPI&&rPI.oficina)||"No indicado"}
+Alcance: ${(rAP&&rAP.alcance)||"No indicado"}
+Fecha y hora de la actualización: ${fecha}
+Modificado por: ${usuario||"No disponible"}`;
+
+    const mailtoUrl=`mailto:${NOTIF_EMAIL}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+    const abierto=await tryOpenMailClient(mailtoUrl);
+
+    const reversionTxt=eraAnalizado?"El registro vuelve a Pendiente de revisión. ":"";
+    if(abierto){
+      showToast(`Cambios guardados. ${reversionTxt}Se abrió un correo preparado; revise la información y presione Enviar`,"ok");
+    }else{
+      showToast(`Cambios guardados. ${reversionTxt}No se pudo abrir un cliente de correo en este dispositivo.`,"warn");
+    }
+  };
+
+  if(eraAnalizado){
+    // La edición de un registro ya analizado cambia su estado de revisión: se exige
+    // identificar obligatoriamente al responsable antes de poder guardar.
+    requestResponsableName(aplicarCambios);
+  }else{
+    aplicarCambios(currentUserAuto()||"Usuario sin identificar");
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1312,6 +1603,35 @@ function resetNuevoForm(){
 }
 
 // Validar y enviar
+// Correo de destino para la notificación por mailto (cliente de correo del usuario).
+const NOTIF_EMAIL="lcaballero@nacionalvida.com.bo";
+// Intenta abrir el cliente de correo predeterminado del dispositivo mediante un enlace mailto.
+// No usa ninguna API/servidor: solo detecta, de forma heurística, si el sistema operativo
+// tomó el control (la pestaña pierde el foco) para saber si el correo se abrió o no.
+function tryOpenMailClient(mailtoUrl){
+  return new Promise(resolve=>{
+    let decided=false;
+    const finish=(opened)=>{
+      if(decided)return;
+      decided=true;
+      window.removeEventListener("blur",onBlur);
+      document.removeEventListener("visibilitychange",onVis);
+      resolve(opened);
+    };
+    const onBlur=()=>finish(true);
+    const onVis=()=>{if(document.hidden)finish(true);};
+    window.addEventListener("blur",onBlur);
+    document.addEventListener("visibilitychange",onVis);
+    const a=document.createElement("a");
+    a.href=mailtoUrl;
+    a.style.display="none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>finish(false),1600);
+  });
+}
+
 async function submitNuevoForm(){
   // Limpiar errores anteriores
   document.querySelectorAll(".verr").forEach(el=>el.style.display="none");
@@ -1361,54 +1681,58 @@ async function submitNuevoForm(){
   PI_DATA.push({id:piNewId,activo:true,parte,gerencia,subarea:gv("n_subarea"),oficina:gv("n_oficina"),proceso:gv("n_proceso"),requisito,responsable,evidencia:gv("n_evidencia"),tema,normativa:gv("n_normativa"),observaciones:gv("n_obs"),alcance:gv("n_alcance")});
 
   updateStats();filtrar();renderSeguimiento();
+  showToast("Registro guardado en ambas matrices ✓","ok");
 
-  // Envío de notificación vía API de Claude
-  const resumen=`
-Nuevo registro de Parte Interesada — SGC Nacional Seguros
-─────────────────────────────────────────
-Fecha: ${fecha} ${hora}
-Usuario: ${usuario}
+  // Preparar correo electrónico (mailto) — sin API, sin backend, sin servicios externos.
+  const resultado=sgc==="Sí"?"Pasa a Matriz":sgc==="Parcial"?"Parcial / Fuera del SGC":"No pasa";
+  const asunto=`Nuevo registro de parte interesada – ${parte}`;
+  const cuerpo=
+`Parte interesada: ${parte}
+Necesidad o expectativa (requisito) identificada: ${requisito}
+Fuente de identificación: ${gv("n_fuente")||"No indicado"}
+Referencia normativa o criterio aplicable: ${gv("n_normativa")||"No indicado"}
+Tema asociado: ${tema}
+Relación con cambio climático: ${cc}
+Pertinencia para el SGC: ${sgc}
+Justificación: ${justif}
+Resultado: ${resultado}
+Responsable de seguimiento: ${responsable}
+Evidencia o seguimiento: ${gv("n_evidencia")||"No indicado"}
+Observaciones: ${gv("n_obs")||"Ninguna"}
+Gerencia o área: ${gerencia}
+Subárea: ${gv("n_subarea")||"No indicado"}
+Proceso: ${gv("n_proceso")||"No indicado"}
+Oficina: ${gv("n_oficina")||"No indicado"}
+Alcance: ${gv("n_alcance")||"No indicado"}
+Fecha y hora del registro: ${fecha}, ${hora}`;
 
-• Parte interesada: ${parte}
-• Necesidad / Requisito: ${requisito}
-• Fuente: ${gv("n_fuente")||"No indicado"}
-• Referencia normativa: ${gv("n_normativa")||"No indicado"}
-• Tema asociado: ${tema}
-• Relación con cambio climático: ${cc}
-• Pertinencia SGC: ${sgc}
-• Justificación: ${justif}
-• Responsable de seguimiento: ${responsable}
-• Evidencia: ${gv("n_evidencia")||"No indicado"}
-• Gerencia / Área: ${gerencia}
-• Sub-área: ${gv("n_subarea")||"No indicado"}
-• Oficina: ${gv("n_oficina")||"No indicado"}
-• Observaciones: ${gv("n_obs")||"Ninguna"}
-  `.trim();
+  const mailtoUrl=`mailto:${NOTIF_EMAIL}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+  const abierto=await tryOpenMailClient(mailtoUrl);
 
-  let notifMsg="Notificación enviada.";
-  try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
-        max_tokens:400,
-        system:`Eres un asistente del SGC de Nacional Seguros. Confirma en español (2-3 líneas, tono profesional) que el correo de notificación fue enviado a lcaballero@nacionalvida.com.bo con el resumen del nuevo registro de parte interesada. No uses listas.`,
-        messages:[{role:"user",content:resumen}]
-      })
-    });
-    const data=await res.json();
-    notifMsg=data.content?.find(b=>b.type==="text")?.text||notifMsg;
-  }catch(e){notifMsg="Registro guardado. (La notificación por correo se procesará en el servidor.)";}
-
-  // Mostrar pantalla de éxito
-  document.getElementById("successMsg").textContent=notifMsg;
+  // Mostrar pantalla de éxito (el mensaje depende de si el correo pudo abrirse o no)
+  const icoEl=document.getElementById("successIcon");
+  const titEl=document.getElementById("successTitle");
+  const msgEl=document.getElementById("successMsg");
+  const subEl=document.getElementById("successSub");
+  if(abierto){
+    icoEl.textContent="✅";
+    titEl.textContent="Registro guardado exitosamente";
+    titEl.style.color="#166534";
+    msgEl.style.color="#166534";
+    msgEl.textContent="Registro guardado. Se abrió un correo preparado; revise la información y presione Enviar.";
+    subEl.innerHTML=`Correo preparado para: <strong>${NOTIF_EMAIL}</strong>`;
+  }else{
+    icoEl.textContent="⚠️";
+    titEl.textContent="Registro guardado — el correo no pudo abrirse";
+    titEl.style.color="#92400E";
+    msgEl.style.color="#92400E";
+    msgEl.textContent=`No se detectó un cliente de correo configurado en este dispositivo. Copie manualmente la información del registro y envíela a ${NOTIF_EMAIL}.`;
+    subEl.textContent="";
+  }
   document.getElementById("nregMain").classList.add("hide");
   document.getElementById("nregSuccess").classList.add("show");
   btn.disabled=false;
   document.getElementById("btnGuardarTxt").textContent="💾 Guardar registro";
-
-  showToast("Registro guardado en ambas matrices ✓","ok");
 }
 
 // ══════════════════════════════════════════════════════
