@@ -1689,29 +1689,19 @@ function guardarCambios(id,type){
     // Preparar correo electrónico (mailto) con los cambios — sin API, sin backend, sin servicios externos.
     const parte=(rAP&&rAP.parte)||(rPI&&rPI.parte)||"";
     const asunto=`Actualización de parte interesada – ${parte}`;
-    const cuerpo=
-`Este correo corresponde a la actualización de un registro existente.
-Código / nivel de acceso: ${currentAccessCode} — ${(currentAccess&&currentAccess.name)||"Administrador"}
-
-Parte interesada: ${parte}
-Necesidad o expectativa (requisito) identificada: ${requisito}
-Fuente de identificación: ${(rAP&&rAP.fuente)||"No indicado"}
-Referencia normativa o criterio aplicable: ${(rPI&&rPI.normativa)||"No indicado"}
-Tema asociado: ${(rAP&&rAP.tema)||"No indicado"}
-Relación con cambio climático: ${(rAP&&rAP.cc)||"No indicado"}
-Pertinencia para el SGC: ${(rAP&&rAP.sgc)||"No indicado"}
-Justificación: ${(rAP&&rAP.justificacion)||"No indicado"}
-Resultado: ${(rAP&&rAP.resultado)||"No indicado"}
-Responsable de seguimiento: ${(rPI&&rPI.responsable)||"No indicado"}
-Evidencia o seguimiento: ${(rPI&&rPI.evidencia)||"No indicado"}
-Observaciones: ${(rPI&&rPI.observaciones)||"Ninguna"}
-Gerencia o área: ${(rPI&&rPI.gerencia)||"No indicado"}
-Subárea: ${(rAP&&rAP.subarea)||(rPI&&rPI.subarea)||"No indicado"}
-Proceso: ${(rPI&&rPI.proceso)||"No indicado"}
-Oficina: ${(rPI&&rPI.oficina)||"No indicado"}
-Alcance: ${(rAP&&rAP.alcance)||"No indicado"}
-Fecha y hora de la actualización: ${fecha}
-Modificado por: ${usuario||"No disponible"}`;
+    const cuerpo=fixedMailBody({
+      TIPO_OPERACION:"ACTUALIZACION",ID_REGISTRO:logicalRecordId(id),TIPO_MATRIZ:"AMBAS_MATRICES",
+      CODIGO_ACCESO:currentAccessCode,NIVEL_ACCESO:accessLevelName(),NOMBRE_ACCESO:(currentAccess&&currentAccess.name)||"Administrador",
+      PARTE_INTERESADA:parte,REQUISITO:requisito,FUENTE:(rAP&&rAP.fuente),REFERENCIA_NORMATIVA:(rPI&&rPI.normativa),
+      TEMA_ASOCIADO:(rAP&&rAP.tema),CAMBIO_CLIMATICO:(rAP&&rAP.cc),PERTINENCIA_SGC:(rAP&&rAP.sgc),
+      JUSTIFICACION:(rAP&&rAP.justificacion),RESULTADO_ANALISIS:(rAP&&rAP.resultado),
+      RESPONSABLE_SEGUIMIENTO:(rPI&&rPI.responsable),EVIDENCIA_SEGUIMIENTO:(rPI&&rPI.evidencia),
+      OBSERVACIONES:(rPI&&rPI.observaciones)||"Ninguna",GERENCIA_AREA:(rPI&&rPI.gerencia),
+      SUBAREA:(rAP&&rAP.subarea)||(rPI&&rPI.subarea),PROCESO:(rPI&&rPI.proceso),OFICINA:(rPI&&rPI.oficina),
+      ALCANCE:(rAP&&rAP.alcance),ESTADO_ANTERIOR:"Activo",ESTADO_NUEVO:"Activo",
+      ESTADO_REVISION:eraAnalizado?"Requiere nueva revisión":estadoRevisionLabel(rAP||{}),
+      REALIZADO_POR:usuario||"No disponible",FECHA_MOVIMIENTO:fecha,MOTIVO_OBSERVACION:"Actualización del registro"
+    });
 
     const mailtoUrl=`mailto:${NOTIF_EMAIL}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
     const abierto=await tryOpenMailClient(mailtoUrl);
@@ -1817,6 +1807,21 @@ function resetNuevoForm(){
 // Validar y enviar
 // Correo de destino para la notificación por mailto (cliente de correo del usuario).
 const NOTIF_EMAIL="lcaballero@nacionalvida.com.bo";
+// Formato estable para que Power Automate pueda reconocer cada campo del correo.
+// Los saltos de línea escritos dentro de un campo se convierten en " | ", de modo
+// que cada clave permanezca siempre en una sola línea.
+function mailValue(value,fallback="No indicado"){
+  const text=String(value??"").replace(/\r?\n/g," | ").trim();
+  return text||fallback;
+}
+function logicalRecordId(id){return `PI-${String(id).padStart(4,"0")}`;}
+function accessLevelName(){
+  const types={subarea:"Subárea",area:"Área",regional:"Regional",admin:"Administrador"};
+  return (currentAccess&&types[currentAccess.type])||"Administrador";
+}
+function fixedMailBody(fields){
+  return ["INICIO_REGISTRO",...Object.entries(fields).map(([key,value])=>`${key}: ${mailValue(value)}`),"FIN_REGISTRO"].join("\n");
+}
 // Intenta abrir el cliente de correo predeterminado del dispositivo mediante un enlace mailto.
 // No usa ninguna API/servidor: solo detecta, de forma heurística, si el sistema operativo
 // tomó el control (la pestaña pierde el foco) para saber si el correo se abrió o no.
@@ -1888,18 +1893,18 @@ async function submitNuevoForm(){
   const hora=ahora.toLocaleTimeString("es-BO",{hour:"2-digit",minute:"2-digit"});
   const usuario=spUser?(spUser.name||spUser.username):"(no capturado)";
 
-  const apNewId=Math.max(...AP_DATA.map(r=>r.id),0)+1;
-  const piNewId=Math.max(...PI_DATA.map(r=>r.id),0)+1;
+  // Un solo ID enlaza la Matriz, el Análisis y el Historial en SharePoint.
+  const newId=Math.max(...AP_DATA.map(r=>r.id),...PI_DATA.map(r=>r.id),0)+1;
 
   // Guardar en matrices
-  AP_DATA.push({id:apNewId,activo:true,parte,requisito,subarea:gv("n_subarea"),fuente:gv("n_fuente"),tema,cc,alcance:gv("n_alcance"),sgc,justificacion:justif,resultado:sgc==="Sí"?"Pasa a Matriz":sgc==="Parcial"?"Parcial / Fuera del SGC":"No pasa"});
-  PI_DATA.push({id:piNewId,activo:true,parte,gerencia,subarea:gv("n_subarea"),oficina:gv("n_oficina"),proceso:gv("n_proceso"),requisito,responsable,evidencia:gv("n_evidencia"),tema,normativa:gv("n_normativa"),observaciones:gv("n_obs"),alcance:gv("n_alcance")});
+  AP_DATA.push({id:newId,activo:true,parte,requisito,subarea:gv("n_subarea"),fuente:gv("n_fuente"),tema,cc,alcance:gv("n_alcance"),sgc,justificacion:justif,resultado:sgc==="Sí"?"Pasa a Matriz":sgc==="Parcial"?"Parcial / Fuera del SGC":"No pasa"});
+  PI_DATA.push({id:newId,activo:true,parte,gerencia,subarea:gv("n_subarea"),oficina:gv("n_oficina"),proceso:gv("n_proceso"),requisito,responsable,evidencia:gv("n_evidencia"),tema,normativa:gv("n_normativa"),observaciones:gv("n_obs"),alcance:gv("n_alcance")});
 
   // Registrar la creación en el historial general de trazabilidad (para exportación a Excel).
   const usuarioLog=currentUserAuto()||"Usuario sin identificar";
   const fechaLog=fmtFechaHora(ahora);
-  logHistorial({idRegistro:apNewId,parte,matriz:"Evaluación de Pertinencia",accion:"Creación",estadoAnterior:"",estadoNuevo:"Pendiente de revisión",campo:"",valorAnterior:"",valorNuevo:"",usuario:usuarioLog,fecha:fechaLog,motivo:""});
-  logHistorial({idRegistro:piNewId,parte,matriz:"Partes Interesadas",accion:"Creación",estadoAnterior:"",estadoNuevo:"",campo:"",valorAnterior:"",valorNuevo:"",usuario:usuarioLog,fecha:fechaLog,motivo:""});
+  logHistorial({idRegistro:newId,parte,matriz:"Evaluación de Pertinencia",accion:"Creación",estadoAnterior:"",estadoNuevo:"Pendiente de revisión",campo:"",valorAnterior:"",valorNuevo:"",usuario:usuarioLog,fecha:fechaLog,motivo:""});
+  logHistorial({idRegistro:newId,parte,matriz:"Partes Interesadas",accion:"Creación",estadoAnterior:"",estadoNuevo:"Activo",campo:"",valorAnterior:"",valorNuevo:"",usuario:usuarioLog,fecha:fechaLog,motivo:""});
 
   updateStats();filtrar();renderSeguimiento();renderActividadReciente();
   showToast("Registro guardado en ambas matrices ✓","ok");
@@ -1907,26 +1912,16 @@ async function submitNuevoForm(){
   // Preparar correo electrónico (mailto) — sin API, sin backend, sin servicios externos.
   const resultado=sgc==="Sí"?"Pasa a Matriz":sgc==="Parcial"?"Parcial / Fuera del SGC":"No pasa";
   const asunto=`Nuevo registro de parte interesada – ${parte}`;
-  const cuerpo=
-`Código / nivel de acceso: ${currentAccessCode} — ${(currentAccess&&currentAccess.name)||"Administrador"}
-Parte interesada: ${parte}
-Necesidad o expectativa (requisito) identificada: ${requisito}
-Fuente de identificación: ${gv("n_fuente")||"No indicado"}
-Referencia normativa o criterio aplicable: ${gv("n_normativa")||"No indicado"}
-Tema asociado: ${tema}
-Relación con cambio climático: ${cc}
-Pertinencia para el SGC: ${sgc}
-Justificación: ${justif}
-Resultado: ${resultado}
-Responsable de seguimiento: ${responsable}
-Evidencia o seguimiento: ${gv("n_evidencia")||"No indicado"}
-Observaciones: ${gv("n_obs")||"Ninguna"}
-Gerencia o área: ${gerencia}
-Subárea: ${gv("n_subarea")||"No indicado"}
-Proceso: ${gv("n_proceso")||"No indicado"}
-Oficina: ${gv("n_oficina")||"No indicado"}
-Alcance: ${gv("n_alcance")||"No indicado"}
-Fecha y hora del registro: ${fecha}, ${hora}`;
+  const cuerpo=fixedMailBody({
+    TIPO_OPERACION:"CREACION",ID_REGISTRO:logicalRecordId(newId),TIPO_MATRIZ:"AMBAS_MATRICES",
+    CODIGO_ACCESO:currentAccessCode,NIVEL_ACCESO:accessLevelName(),NOMBRE_ACCESO:(currentAccess&&currentAccess.name)||"Administrador",
+    PARTE_INTERESADA:parte,REQUISITO:requisito,FUENTE:gv("n_fuente"),REFERENCIA_NORMATIVA:gv("n_normativa"),
+    TEMA_ASOCIADO:tema,CAMBIO_CLIMATICO:cc,PERTINENCIA_SGC:sgc,JUSTIFICACION:justif,RESULTADO_ANALISIS:resultado,
+    RESPONSABLE_SEGUIMIENTO:responsable,EVIDENCIA_SEGUIMIENTO:gv("n_evidencia"),OBSERVACIONES:gv("n_obs")||"Ninguna",
+    GERENCIA_AREA:gerencia,SUBAREA:gv("n_subarea"),PROCESO:gv("n_proceso"),OFICINA:gv("n_oficina"),ALCANCE:gv("n_alcance"),
+    ESTADO_ANTERIOR:"Sin registro",ESTADO_NUEVO:"Activo",ESTADO_REVISION:"Pendiente de revisión",
+    REALIZADO_POR:usuarioLog,FECHA_MOVIMIENTO:`${fecha}, ${hora}`,MOTIVO_OBSERVACION:"Creación de registro"
+  });
 
   const mailtoUrl=`mailto:${NOTIF_EMAIL}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
   const abierto=await tryOpenMailClient(mailtoUrl);
@@ -1986,29 +1981,17 @@ async function execConf(){
   updateStats();filtrar();renderSeguimiento();renderActividadReciente();
 
   // Preparar correo electrónico (mailto) de la desactivación — sin API, sin backend, sin servicios externos.
-  const matrizPrincipal=type==="ap"?"Evaluación de Pertinencia":"Partes Interesadas";
   const parte=(rAP&&rAP.parte)||(rPI&&rPI.parte)||"";
   const requisito=(rAP&&rAP.requisito)||(rPI&&rPI.requisito)||"";
   const asunto=`Desactivación de parte interesada – ${parte}`;
-  const cuerpo=
-`Tipo de operación: Desactivación
-Código / nivel de acceso: ${currentAccessCode} — ${(currentAccess&&currentAccess.name)||"Administrador"}
-ID del registro: ${id}
-Tipo de matriz: ${matrizPrincipal}
-Parte interesada: ${parte}
-Necesidad o expectativa (requisito) identificada: ${requisito||"No indicado"}
-Gerencia o área: ${(rPI&&rPI.gerencia)||"No indicado"}
-Subárea: ${(rPI&&rPI.subarea)||(rAP&&rAP.subarea)||"No indicado"}
-Proceso: ${(rPI&&rPI.proceso)||"No indicado"}
-Oficina: ${(rPI&&rPI.oficina)||"No indicado"}
-Responsable de seguimiento: ${(rPI&&rPI.responsable)||"No indicado"}
-Estado anterior: Activo
-Estado nuevo: Inactivo
-Motivo de desactivación: ${motivo}
-Realizado por: ${usuario||"No disponible"}
-Fecha y hora de la desactivación: ${fecha}
-
-Este registro se conserva en el historial para fines de trazabilidad.`;
+  const cuerpo=fixedMailBody({
+    TIPO_OPERACION:"DESACTIVACION",ID_REGISTRO:logicalRecordId(id),TIPO_MATRIZ:"AMBAS_MATRICES",
+    CODIGO_ACCESO:currentAccessCode,NIVEL_ACCESO:accessLevelName(),NOMBRE_ACCESO:(currentAccess&&currentAccess.name)||"Administrador",
+    PARTE_INTERESADA:parte,REQUISITO:requisito,GERENCIA_AREA:(rPI&&rPI.gerencia),
+    SUBAREA:(rPI&&rPI.subarea)||(rAP&&rAP.subarea),PROCESO:(rPI&&rPI.proceso),OFICINA:(rPI&&rPI.oficina),
+    RESPONSABLE_SEGUIMIENTO:(rPI&&rPI.responsable),ESTADO_ANTERIOR:"Activo",ESTADO_NUEVO:"Inactivo",
+    REALIZADO_POR:usuario||"No disponible",FECHA_MOVIMIENTO:fecha,MOTIVO_OBSERVACION:motivo
+  });
 
   const mailtoUrl=`mailto:${CONFIG.notifyEmail}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
   const abierto=await tryOpenMailClient(mailtoUrl);
