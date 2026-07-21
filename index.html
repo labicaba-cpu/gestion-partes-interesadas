@@ -441,6 +441,16 @@ body{background:var(--off);}
 .vig-btn-det:hover{background:#DCEAF4;}
 .vig-empty{padding:50px 20px;text-align:center;color:var(--gray);font-size:12.5px;}
 .mtbl tr.inactivo-row td{opacity:.55;}
+.access-card{background:#fff;border:1px solid var(--lgray);border-radius:13px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.access-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;background:var(--ice);border-bottom:1px solid var(--lgray);}
+.access-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+.access-table th{padding:9px 12px;background:var(--navy);color:white;text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;}
+.access-table td{padding:9px 12px;border-bottom:1px solid #EDF1F5;vertical-align:middle;}
+.access-toggle{border:0;border-radius:7px;padding:6px 11px;font-size:10.5px;font-weight:700;cursor:pointer;}
+.access-toggle.block{background:#FFEBEE;color:var(--red);}.access-toggle.enable{background:#E8F5E9;color:var(--green);}
+.readonly-banner{display:none;background:#FFF7ED;border-bottom:1px solid #FDBA74;color:#9A3412;padding:9px 18px;font-size:11.5px;font-weight:700;text-align:center;}
+body.read-only-mode .readonly-banner{display:block;}
+body.read-only-mode .readonly-hide{display:none!important;}
 @media (max-width:640px){
   .vig-detail-grid{grid-template-columns:1fr 1fr;}
   .vig-detail-grid .wide{grid-column:span 2;}
@@ -476,6 +486,7 @@ body{background:var(--off);}
       <button class="tnav" data-nav="vigente" onclick="nav('vigente')">📋 Ver matriz vigente</button>
       <button class="tnav" data-nav="nuevo" onclick="nav('nuevo')">➕ Nuevo registro</button>
       <button class="tnav" data-nav="seguimiento" onclick="nav('seguimiento')">📊 Seguimiento</button>
+      <button class="tnav" id="adminAccessNav" data-nav="accesos" onclick="nav('accesos')" style="display:none">🔐 Control de accesos</button>
     </div>
   </nav>
 
@@ -497,6 +508,7 @@ body{background:var(--off);}
       <button class="uout" onclick="signOut()">Salir</button>
     </div>
   </div>
+  <div class="readonly-banner" id="readonlyBanner">🔒 La sesión de actualización ha finalizado. Puede consultar la información, pero no modificarla. Para solicitar un cambio, comuníquese con el equipo de Calidad.</div>
 
   <!-- BACK BUTTON -->
   <div class="back-bar" id="backBar">
@@ -594,10 +606,8 @@ body{background:var(--off);}
             <option value="revisado">✅ Revisados</option>
             <option value="pendiente">⏳ Pendientes</option>
           </select>
-          <select class="mti" id="fEstado" onchange="filtrar()" style="flex:0 0 auto;min-width:130px" title="Filtrar por estado del registro">
-            <option value="">🔘 Estado: Todos</option>
-            <option value="activo">✅ Activos</option>
-            <option value="inactivo">⛔ Inactivos</option>
+          <select class="mti" id="fOficina" onchange="filtrar()" style="flex:0 0 auto;min-width:140px" title="Filtrar por oficina">
+            <option value="">📍 Todas las oficinas</option>
           </select>
           <span class="sync-bdg" id="syncBdg">✓ — registros</span>
         </div>
@@ -717,12 +727,12 @@ body{background:var(--off);}
               <div class="qc-num">Pregunta 6 de 11</div>
               <div class="qc-lbl">Relación con cambio climático <span class="qc-req">*</span><span class="qc-help-btn" onclick="openHelp('cc')">?</span></div>
               <div class="qc-hint">
-                Considere los siguientes criterios para determinar la vinculación del requisito con el cambio climático:<br>
-                <span class="eg">• Impacto de eventos climáticos en la prestación del servicio o en el cumplimiento del requisito.<br>
-                • Necesidad de adaptación de la organización frente a los efectos del cambio climático.<br>
-                • Impacto en la operación de los procesos o en la atención de los asegurados.<br>
-                • Oportunidades para desarrollar o mejorar productos, coberturas o servicios.<br>
-                • Existencia de requisitos regulatorios, información de siniestralidad o condiciones del mercado relacionados con el cambio climático.</span>
+                Responda estas preguntas como guía antes de seleccionar una opción:<br>
+                <span class="eg">• ¿Un evento climático puede afectar el cumplimiento de este requisito o la prestación del servicio?<br>
+                • ¿Se necesitan medidas de adaptación, prevención o continuidad?<br>
+                • ¿Puede afectar oficinas, personas, proveedores, documentación o sistemas?<br>
+                • ¿Genera oportunidades para mejorar productos, coberturas o servicios?<br>
+                • ¿Existen normas, información de siniestralidad o condiciones de mercado relacionadas?</span>
               </div>
               <div class="nfpills" id="npCC">
                 <span class="nfpill" onclick="selNPill('npCC',this,'sg','n_cc','Directa')">🌿 Directa</span>
@@ -742,11 +752,12 @@ body{background:var(--off);}
               <div class="qc-num">Pregunta 7 de 11</div>
               <div class="qc-lbl">Pertinencia para el SGC <span class="qc-req">*</span><span class="qc-help-btn" onclick="openHelp('sgc')">?</span></div>
               <div class="qc-hint">
-                Considere los siguientes criterios para determinar la pertinencia del requisito:<br>
-                <span class="eg">• Impacto en la prestación del servicio.<br>
-                • Riesgos legales o regulatorios.<br>
-                • Impacto en la satisfacción del cliente.<br>
-                • Relación con procesos del alcance del SGC.</span>
+                Responda estas preguntas como guía antes de seleccionar una opción:<br>
+                <span class="eg">• ¿Influye en la calidad o continuidad del servicio?<br>
+                • ¿Es obligatorio por ley, norma, regulación, contrato o política aplicable?<br>
+                • ¿Puede afectar la satisfacción o los requisitos del cliente?<br>
+                • ¿Puede generar un incumplimiento o afectar el desempeño del proceso?<br>
+                • ¿Se relaciona con un proceso incluido en el alcance del SGC?</span>
               </div>
               <div class="sgc-info">
                 <div class="sgc-row"><div class="sgc-dot" style="background:#2E7D32"></div><div><strong>Sí:</strong> cuando impacta el servicio, el cliente, el cumplimiento aplicable o un proceso del SGC.</div></div>
@@ -897,6 +908,27 @@ body{background:var(--off);}
     <div id="seguimientoList"></div>
   </div>
 
+  <!-- CONTROL DE ACCESOS (solo administrador) -->
+  <div class="section" id="sec-accesos">
+    <div style="font-size:17px;font-weight:700;color:var(--dark);margin-bottom:3px">Control de accesos</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:16px">Bloquee los códigos de las Áreas, Subáreas o Regionales cuyas sesiones de trabajo hayan concluido.</div>
+    <div class="access-card">
+      <div class="access-toolbar">
+        <div>
+          <div style="font-weight:700;color:var(--dark);font-size:12px">Estado de los códigos</div>
+          <div style="font-size:10.5px;color:var(--gray);margin-top:2px">Después de realizar los cambios, descargue el HTML y reemplácelo en GitHub.</div>
+        </div>
+        <button class="tbtn green" onclick="descargarHTMLAccesos()">⬇ Descargar HTML actualizado</button>
+      </div>
+      <div style="overflow:auto;max-height:560px">
+        <table class="access-table">
+          <thead><tr><th>Nivel</th><th>Área / Subárea / Regional</th><th>Código</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody id="accessControlBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- MATRIZ VIGENTE (consulta, solo lectura) -->
   <div class="section" id="sec-vigente">
     <div class="vig-hero">
@@ -1013,6 +1045,8 @@ const SUBMAP = {
 
 const TEMAS_LIST = ['Regulatorio / legal','Climático / ambiental','Financiero / técnico','Mercado / cliente','Operativo','Tecnológico / digital','Seguridad de la información','Recursos humanos','Otro'];
 const PROCESOS_LIST = ['Gestión de Calidad','Gestión de Gobierno Corporativo','Gestión de Planificación','Control de Gestión','Gestión de Monitoreo','Gestión de Proyectos','Gestión Financiera','Gestión de Desarrollo de Negocios','Gestión de Comunicaciones','Gestión Comercial','Gestión de Suscripción','Gestión de Cobranzas','Gestión de Mantenimiento de Cartera','Gestión de Atención al Cliente','Gestión de Experiencia al Cliente','Gestión de Reaseguro','Gestión de Riesgos','Gestión de Recursos Humanos','Gestión de Regulación','Gestión Tributaria','Gestión de Sistemas','Gestión de Archivo','Gestión Administrativa','Gestión Legal','Gestión Contable','Gestión de Tesorería','Gestión de Servicios Generales','Gestión de UIF','Gestión de Recupero','Gestión de Seguridad Laboral','Gestión de Seguridad de la información','Gestión de Innovación y Estrategia de Datos'];
+const ALCANCES_LIST = ['Nacional','Regional'];
+const OFICINAS_LIST = ['Nacional','Regional','Santa Cruz','La Paz','Sucre','Cochabamba','Beni','Tarija','Potosí','Oruro','Pando'];
 
 // ACCESOS LOCALES SIN API. Los códigos determinan el alcance visible.
 const ACCESS_CODES={
@@ -1044,6 +1078,9 @@ const ACCESS_CODES={
   "RG-007-W2SY":{type:"regional",name:"Potosí"},"RG-008-5ZHL":{type:"regional",name:"Oruro"},
   "RG-009-C9HT":{type:"regional",name:"Pando"}
 };
+// BLOQUEOS_PUBLICADOS: esta línea se actualiza al descargar el HTML desde Control de accesos.
+const BLOCKED_ACCESS_CODES = [];
+let blockedAccessCodes=new Set(BLOCKED_ACCESS_CODES);
 let currentAccess=null,currentAccessCode="";
 const norm=v=>(v||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase();
 function processAllowed(process){return currentAccess&&currentAccess.processes&&currentAccess.processes.some(p=>norm(p)===norm(process));}
@@ -1061,15 +1098,56 @@ function visibleAP(){return AP_DATA.filter(canSeeAP);}
 function loginWithCode(){
   const input=document.getElementById("accessCode"),code=(input.value||"").trim().toUpperCase();
   const access=ACCESS_CODES[code];
-  if(!access){document.getElementById("lErr").style.display="block";input.focus();return;}
+  const err=document.getElementById("lErr");
+  if(!access){err.textContent="⚠ Código incorrecto. Verifique e intente nuevamente.";err.style.display="block";input.focus();return;}
   currentAccessCode=code;currentAccess={...access};
+  currentAccess.readOnly=access.type!=="admin"&&blockedAccessCodes.has(code);
   document.getElementById("lErr").style.display="none";
   const label=access.label||`${access.type==="subarea"?"Subárea":access.type==="area"?"Área":"Regional"}: ${access.name}`;
   spUser={name:label,username:code};
   document.getElementById("uAv").textContent=access.type==="admin"?"AD":access.type==="subarea"?"SA":access.type==="area"?"AR":"RG";
   document.getElementById("uName").textContent=label;
   document.getElementById("heroGreet").textContent="Bienvenido — "+label;
+  const adminNav=document.getElementById("adminAccessNav");if(adminNav)adminNav.style.display=access.type==="admin"?"block":"none";
   loadOffline();
+}
+
+function accessTypeLabel(type){return type==="subarea"?"Subárea":type==="area"?"Área":type==="regional"?"Regional":"Administrador";}
+function renderAccessControl(){
+  if(!currentAccess||currentAccess.type!=="admin")return;
+  const body=document.getElementById("accessControlBody");if(!body)return;
+  const rows=Object.entries(ACCESS_CODES).filter(([,a])=>a.type!=="admin").sort((a,b)=>accessTypeLabel(a[1].type).localeCompare(accessTypeLabel(b[1].type))||a[1].name.localeCompare(b[1].name));
+  body.innerHTML=rows.map(([code,a])=>{
+    const blocked=blockedAccessCodes.has(code);
+    return `<tr><td>${accessTypeLabel(a.type)}</td><td style="font-weight:700;color:var(--blue)">${a.name}</td><td><code>${code}</code></td><td>${blocked?'<span class="bdg a">🔒 Solo consulta</span>':'<span class="bdg g">✅ Habilitado</span>'}</td><td><button class="access-toggle ${blocked?'enable':'block'}" onclick="toggleAccessBlock('${code}')">${blocked?'Habilitar edición':'Finalizar sesión'}</button></td></tr>`;
+  }).join("");
+}
+function toggleAccessBlock(code){
+  if(!currentAccess||currentAccess.type!=="admin"||!ACCESS_CODES[code]||ACCESS_CODES[code].type==="admin")return;
+  const isBlocked=blockedAccessCodes.has(code),a=ACCESS_CODES[code];
+  const ok=confirm(`${isBlocked?"¿Habilitar nuevamente la edición para":"¿Finalizar la sesión y dejar en modo consulta a"} ${accessTypeLabel(a.type)}: ${a.name}?`);
+  if(!ok)return;
+  if(isBlocked)blockedAccessCodes.delete(code);else blockedAccessCodes.add(code);
+  renderAccessControl();
+  showToast(`Acceso ${isBlocked?"habilitado para edición":"cambiado a solo consulta"}. Descargue y publique el HTML para aplicar el cambio a todos los usuarios.`,isBlocked?"ok":"warn");
+}
+async function descargarHTMLAccesos(){
+  if(!currentAccess||currentAccess.type!=="admin")return;
+  try{
+    const url=window.location.href.split("?")[0].split("#")[0];
+    const resp=await fetch(url,{cache:"no-store"});
+    if(!resp.ok)throw new Error("No se pudo leer el HTML publicado");
+    let html=await resp.text();
+    const bloqueados=JSON.stringify([...blockedAccessCodes].sort());
+    const patron=/const BLOCKED_ACCESS_CODES\s*=\s*\[[^;]*\];/;
+    if(!patron.test(html))throw new Error("No se encontró la configuración de bloqueos");
+    html=html.replace(patron,`const BLOCKED_ACCESS_CODES = ${bloqueados};`);
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="index.html";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    showToast("HTML actualizado descargado. Reemplácelo en GitHub para publicar los modos de consulta.","ok");
+  }catch(e){
+    showToast("Abra la aplicación desde GitHub Pages para descargar el HTML actualizado.","err");
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1116,19 +1194,24 @@ function loadOffline(){
   document.getElementById("loginScreen").style.display="none";
   document.getElementById("app").classList.add("show");
   document.getElementById("loadingScreen").style.display="none";
+  const soloConsulta=!!(currentAccess&&currentAccess.readOnly);
+  document.body.classList.toggle("read-only-mode",soloConsulta);
+  const nuevoNav=document.querySelector('.tnav[data-nav="nuevo"]');if(nuevoNav)nuevoNav.style.display=soloConsulta?"none":"";
   normalizeRevisionFields();
   buildFilters(); updateStats(); filtrar(); renderSeguimiento(); updateRevisionStats(); renderActividadReciente();
-  showToast("Acceso autorizado — "+visiblePI().filter(r=>r.activo!==false).length+" registros activos","ok");
+  showToast((soloConsulta?"Acceso en modo consulta — ":"Acceso autorizado — ")+visiblePI().filter(r=>r.activo!==false).length+" registros activos",soloConsulta?"warn":"ok");
 }
 function buildFilters(){
-  const fP=document.getElementById("fParte"), fG=document.getElementById("fGer"), fSub=document.getElementById("fSubarea");
-  fP.innerHTML='<option value="">🔹 Todas las partes</option>';fG.innerHTML='<option value="">🔹 Todas las gerencias</option>';fSub.innerHTML='<option value="">🔹 Todas las sub-áreas</option>';
+  const fP=document.getElementById("fParte"), fG=document.getElementById("fGer"), fSub=document.getElementById("fSubarea"), fOficina=document.getElementById("fOficina");
+  fP.innerHTML='<option value="">🔹 Todas las partes</option>';fG.innerHTML='<option value="">🔹 Todas las gerencias</option>';fSub.innerHTML='<option value="">🔹 Todas las sub-áreas</option>';fOficina.innerHTML='<option value="">📍 Todas las oficinas</option>';
   const partes=[...new Set([...visibleAP(),...visiblePI()].map(r=>r.parte).filter(Boolean))].sort();
   partes.forEach(v=>fP.innerHTML+=`<option value="${v}">${v}</option>`);
   const gers=[...new Set(visiblePI().map(r=>r.gerencia).filter(Boolean))].sort();
   gers.forEach(v=>fG.innerHTML+=`<option value="${v}">${v}</option>`);
   const subs=[...new Set([...visibleAP(),...visiblePI()].map(r=>r.subarea).filter(Boolean))].sort();
   subs.forEach(v=>fSub.innerHTML+=`<option value="${v}">${v}</option>`);
+  const oficinas=[...new Set(visiblePI().map(r=>r.oficina).filter(Boolean))].sort();
+  oficinas.forEach(v=>fOficina.innerHTML+=`<option value="${v}">${v}</option>`);
 }
 function updateStats(){
   const piAct=visiblePI().filter(r=>r.activo!==false);
@@ -1266,6 +1349,7 @@ function updateRevisionStats(){
   document.getElementById("revCountTotal").textContent=total;
 }
 function marcarRevisado(apId){
+  if(currentAccess&&currentAccess.readOnly){showToast("Este acceso está habilitado únicamente para consulta.","warn");return;}
   const ap=AP_DATA.find(x=>x.id===apId);
   if(!ap){showToast("Registro no encontrado","err");return;}
   requestResponsableName(usuario=>{
@@ -1281,6 +1365,7 @@ function marcarRevisado(apId){
   });
 }
 function desmarcarRevisado(apId){
+  if(currentAccess&&currentAccess.readOnly){showToast("Este acceso está habilitado únicamente para consulta.","warn");return;}
   const ap=AP_DATA.find(x=>x.id===apId);
   if(!ap){showToast("Registro no encontrado","err");return;}
   requestResponsableName(usuario=>{
@@ -1311,16 +1396,15 @@ function filtrar(){
   const p=document.getElementById("fParte").value;
   const g=document.getElementById("fGer").value;
   const sub=document.getElementById("fSubarea").value;
+  const oficina=document.getElementById("fOficina")?document.getElementById("fOficina").value:"";
   const q=document.getElementById("fQ").value.toLowerCase().trim();
   const rev=document.getElementById("fRevision")?document.getElementById("fRevision").value:"";
-  const est=document.getElementById("fEstado")?document.getElementById("fEstado").value:"";
-  const estOk=r=>{if(est==="activo"&&r.activo===false)return false;if(est==="inactivo"&&r.activo!==false)return false;return true;};
   if(curView===0){
     filtered=visibleAP().filter(r=>{
-      if(!estOk(r))return false;
       if(p&&r.parte!==p)return false;
       if(g){const pi=PI_DATA.find(x=>x.parte===r.parte);if(!pi||pi.gerencia!==g)return false;}
       if(sub&&r.subarea!==sub)return false;
+      if(oficina){const pi=PI_DATA.find(x=>x.id===r.id)||PI_DATA.find(x=>x.parte===r.parte);if(!pi||pi.oficina!==oficina)return false;}
       if(rev==="revisado"&&!r.revisado)return false;
       if(rev==="pendiente"&&r.revisado)return false;
       if(q){const h=r.parte.toLowerCase().includes(q)||(r.requisito||"").toLowerCase().includes(q)||(r.subarea||"").toLowerCase().includes(q)||(r.tema||"").toLowerCase().includes(q)||(r.justificacion||"").toLowerCase().includes(q);if(!h)return false;}
@@ -1328,17 +1412,17 @@ function filtrar(){
     });
   }else{
     filtered=visiblePI().filter(r=>{
-      if(!estOk(r))return false;
       if(p&&r.parte!==p)return false;
       if(g&&r.gerencia!==g)return false;
       if(sub&&r.subarea!==sub)return false;
+      if(oficina&&r.oficina!==oficina)return false;
       if(rev){const ap=AP_DATA.find(x=>x.parte===r.parte);const isRev=ap?!!ap.revisado:false;if(rev==="revisado"&&!isRev)return false;if(rev==="pendiente"&&isRev)return false;}
       if(q){const h=r.parte.toLowerCase().includes(q)||(r.gerencia||"").toLowerCase().includes(q)||(r.subarea||"").toLowerCase().includes(q)||(r.requisito||"").toLowerCase().includes(q)||(r.proceso||"").toLowerCase().includes(q)||(r.responsable||"").toLowerCase().includes(q);if(!h)return false;}
       return true;
     });
   }
-  const apC=visibleAP().filter(r=>{if(!estOk(r))return false;if(p&&r.parte!==p)return false;return true;}).length;
-  const piC=visiblePI().filter(r=>{if(!estOk(r))return false;if(p&&r.parte!==p)return false;if(g&&r.gerencia!==g)return false;return true;}).length;
+  const apC=visibleAP().filter(r=>{if(p&&r.parte!==p)return false;if(oficina){const pi=PI_DATA.find(x=>x.id===r.id)||PI_DATA.find(x=>x.parte===r.parte);if(!pi||pi.oficina!==oficina)return false;}return true;}).length;
+  const piC=visiblePI().filter(r=>{if(p&&r.parte!==p)return false;if(g&&r.gerencia!==g)return false;if(oficina&&r.oficina!==oficina)return false;return true;}).length;
   document.getElementById("vc0").textContent=apC;
   document.getElementById("vc1").textContent=piC;
   document.getElementById("syncBdg").textContent="✓ "+filtered.length+" registro"+(filtered.length!==1?"s":"");
@@ -1422,8 +1506,8 @@ function renderDetail(id,type){
 function renderDetailView(id,type){
   const panel=document.getElementById("detPanel");
   let rAP,rPI;
-  if(type==="ap"){rAP=AP_DATA.find(x=>x.id===id);if(!rAP)return;rPI=PI_DATA.find(x=>x.parte===rAP.parte);}
-  else{rPI=PI_DATA.find(x=>x.id===id);if(!rPI)return;rAP=AP_DATA.find(x=>x.parte===rPI.parte);}
+  if(type==="ap"){rAP=AP_DATA.find(x=>x.id===id);if(!rAP)return;rPI=PI_DATA.find(x=>x.id===rAP.id)||PI_DATA.find(x=>x.parte===rAP.parte);}
+  else{rPI=PI_DATA.find(x=>x.id===id);if(!rPI)return;rAP=AP_DATA.find(x=>x.id===rPI.id)||AP_DATA.find(x=>x.parte===rPI.parte);}
   const ap=rAP||{},pi=rPI||{};
   const parte=ap.parte||pi.parte||"—";
   const sgcC=ap.sgc==="Sí"?"b":ap.sgc==="Parcial"?"a":"sc";
@@ -1440,8 +1524,7 @@ function renderDetailView(id,type){
         </div>
       </div>
       <div class="det-acts">
-        <button class="det-btn edit" onclick="startEdit(${id},'${type}')">✏️ Editar</button>
-        ${inactivo?"":`<button class="det-btn deact" onclick="confirmarDesact(${id},'${type}')">⊘ Desactivar</button>`}
+        ${currentAccess&&currentAccess.readOnly?'<span class="bdg a">🔒 Solo consulta</span>':`<button class="det-btn edit" onclick="startEdit(${id},'${type}')">✏️ Editar</button>${inactivo?"":`<button class="det-btn deact" onclick="confirmarDesact(${id},'${type}')">⊘ Desactivar</button>`}`}
       </div>
     </div>
     <div class="dbody">
@@ -1507,7 +1590,7 @@ function renderDetailView(id,type){
           <div class="drow2">${df("Último responsable que revisó",ap.revisadoPor)}${df("Fecha de la última revisión",ap.fechaRevision)}</div>
           <div class="drow2">${df("Última modificación por",ap.modificadoPor)}${df("Fecha de la última modificación",ap.ultimaModificacion)}</div>
           <div style="margin-top:10px">
-            ${ap.revisado
+            ${currentAccess&&currentAccess.readOnly?'<span class="bdg a">🔒 Revisión no disponible en modo consulta</span>':ap.revisado
               ?`<button class="det-btn markundo" onclick="desmarcarRevisado(${ap.id})">↩ Revertir a pendiente</button>`
               :`<button class="det-btn markok" onclick="marcarRevisado(${ap.id})">✅ Marcar como analizado</button>`}
           </div>
@@ -1523,6 +1606,7 @@ function renderDetailView(id,type){
 }
 
 function startEdit(id,type){
+  if(currentAccess&&currentAccess.readOnly){showToast("La sesión finalizó. No se permiten modificaciones con este acceso.","warn");return;}
   editMode=true;editId=id;editType=type;
   const panel=document.getElementById("detPanel");
   let rAP,rPI;
@@ -1555,21 +1639,22 @@ function startEdit(id,type){
       <!-- 2. Contexto de Aplicación -->
       <div class="blk">
         <div class="bk-hdr"><div class="bk-dot" style="background:var(--purple)"></div><div class="bk-lbl" style="color:var(--purple)">Contexto de Aplicación</div></div>
+        <div class="df"><div class="dlbl">Proceso</div><select class="ef-select" id="e_proceso"><option value="">— Selecciona —</option>${opts(PROCESOS_LIST,pi.proceso)}</select></div>
         <div class="drow2">
-          <div class="df"><div class="dlbl">Proceso</div><select class="ef-select" id="e_proceso"><option value="">— Selecciona —</option>${opts(PROCESOS_LIST,pi.proceso)}</select></div>
-          <div class="df"><div class="dlbl">Alcance</div>${pills("e_alc_g","e_alcance",ap.alcance,[["Nacional","sb"],["Regional","sb"]])}</div>
+          <div class="df"><div class="dlbl">Alcance</div><select class="ef-select" id="e_alcance"><option value="">— Selecciona —</option>${opts(ALCANCES_LIST,ap.alcance||pi.alcance)}</select></div>
+          <div class="df"><div class="dlbl">Oficina</div><select class="ef-select" id="e_oficina"><option value="">— Selecciona —</option>${opts(OFICINAS_LIST,pi.oficina)}</select></div>
         </div>
       </div>
       <!-- 3. Cambio Climático -->
       <div class="blk" style="background:#E8F5E9">
         <div class="bk-hdr"><div class="bk-dot" style="background:var(--green)"></div><div class="bk-lbl" style="color:var(--green)">🌿 Cambio Climático</div></div>
         <div style="font-size:11px;color:#78909C;line-height:1.7;margin-bottom:10px;padding:6px 8px;background:rgba(255,255,255,0.6);border-radius:4px;">
-          <strong style="color:#558B2F">Criterios a considerar:</strong><br>
-          • Impacto de eventos climáticos en la prestación del servicio o en el cumplimiento del requisito.<br>
-          • Necesidad de adaptación de la organización frente a los efectos del cambio climático.<br>
-          • Impacto en la operación de los procesos o en la atención de los asegurados.<br>
-          • Oportunidades para desarrollar o mejorar productos, coberturas o servicios.<br>
-          • Existencia de requisitos regulatorios, información de siniestralidad o condiciones del mercado relacionados con el cambio climático.
+          <strong style="color:#558B2F">Preguntas guía:</strong><br>
+          • ¿Un evento climático puede afectar el cumplimiento de este requisito o la prestación del servicio?<br>
+          • ¿Se necesitan medidas de adaptación, prevención o continuidad?<br>
+          • ¿Puede afectar oficinas, personas, proveedores, documentación o sistemas?<br>
+          • ¿Genera oportunidades para mejorar productos, coberturas o servicios?<br>
+          • ¿Existen normas, información de siniestralidad o condiciones de mercado relacionadas?
         </div>
         <div class="df"><div class="dlbl">¿Vinculación con el cambio climático?</div>${pills("e_cc_g","e_cc",ap.cc,[["Directa","sg"],["Indirecta","sa"],["No aplica","sc"]])}</div>
       </div>
@@ -1577,11 +1662,12 @@ function startEdit(id,type){
       <div class="blk" style="background:#F3FEF5">
         <div class="bk-hdr"><div class="bk-dot" style="background:#43A047"></div><div class="bk-lbl" style="color:#43A047">Análisis de Pertinencia</div></div>
         <div style="font-size:11px;color:#78909C;line-height:1.7;margin-bottom:10px;padding:6px 8px;background:rgba(255,255,255,0.6);border-radius:4px;">
-          <strong style="color:#2E7D32">Criterios a considerar:</strong><br>
-          • Impacto en la prestación del servicio.<br>
-          • Riesgos legales o regulatorios.<br>
-          • Impacto en la satisfacción del cliente.<br>
-          • Relación con procesos del alcance del SGC.
+          <strong style="color:#2E7D32">Preguntas guía:</strong><br>
+          • ¿Influye en la calidad o continuidad del servicio?<br>
+          • ¿Es obligatorio por ley, norma, regulación, contrato o política aplicable?<br>
+          • ¿Puede afectar la satisfacción o los requisitos del cliente?<br>
+          • ¿Puede generar un incumplimiento o afectar el desempeño del proceso?<br>
+          • ¿Se relaciona con un proceso incluido en el alcance del SGC?
         </div>
         <div class="df"><div class="dlbl">¿Pertinente al SGC?</div>${pills("e_sgc_g","e_sgc",ap.sgc,[["Sí","sg"],["Parcial","sa"],["No","sc"]])}</div>
         <div class="df"><div class="dlbl">Justificación de pertinencia</div><textarea class="ef-text" id="e_justificacion" rows="3">${ap.justificacion||""}</textarea></div>
@@ -1626,13 +1712,14 @@ function selEPill(gid,el,cls,hid,val){
 function cancelEdit(id,type){editMode=false;editId=null;editType=null;renderDetailView(id,type);}
 
 function guardarCambios(id,type){
+  if(currentAccess&&currentAccess.readOnly){showToast("La sesión finalizó. No se permiten modificaciones con este acceso.","warn");return;}
   const gv=fid=>{const el=document.getElementById(fid);return el?el.value.trim():"";};
   const requisito=gv("e_requisito");
   if(!requisito){showToast('El campo "Requisito identificado" es obligatorio',"err");return;}
   if(currentAccess&&currentAccess.type==="area"&&!processAllowed(gv("e_proceso"))){showToast("El proceso seleccionado no pertenece al Área autorizada","err");return;}
   let rAP,rPI;
-  if(type==="ap"){rAP=AP_DATA.find(x=>x.id===id);rPI=PI_DATA.find(x=>x.parte===rAP.parte);}
-  else{rPI=PI_DATA.find(x=>x.id===id);rAP=AP_DATA.find(x=>x.parte===rPI.parte);}
+  if(type==="ap"){rAP=AP_DATA.find(x=>x.id===id);rPI=PI_DATA.find(x=>x.id===rAP.id)||PI_DATA.find(x=>x.parte===rAP.parte);}
+  else{rPI=PI_DATA.find(x=>x.id===id);rAP=AP_DATA.find(x=>x.id===rPI.id)||AP_DATA.find(x=>x.parte===rPI.parte);}
 
   const eraAnalizado=!!(rAP&&rAP.revisado);
 
@@ -1671,12 +1758,13 @@ function guardarCambios(id,type){
       });
     }
     if(rPI){
-      const antesPI={requisito:rPI.requisito||"",normativa:rPI.normativa||"",proceso:rPI.proceso||"",responsable:rPI.responsable||"",evidencia:rPI.evidencia||"",observaciones:rPI.observaciones||""};
-      Object.assign(rPI,{requisito,normativa:gv("e_normativa"),proceso:gv("e_proceso"),responsable:gv("e_responsable"),evidencia:gv("e_evidencia"),observaciones:gv("e_observaciones")});
+      const antesPI={requisito:rPI.requisito||"",normativa:rPI.normativa||"",proceso:rPI.proceso||"",oficina:rPI.oficina||"",responsable:rPI.responsable||"",evidencia:rPI.evidencia||"",observaciones:rPI.observaciones||""};
+      Object.assign(rPI,{requisito,normativa:gv("e_normativa"),proceso:gv("e_proceso"),oficina:gv("e_oficina"),responsable:gv("e_responsable"),evidencia:gv("e_evidencia"),observaciones:gv("e_observaciones")});
       const camposPI={
         "Requisito identificado":[antesPI.requisito,rPI.requisito||""],
         "Referencia normativa o criterio aplicable":[antesPI.normativa,rPI.normativa||""],
         "Proceso":[antesPI.proceso,rPI.proceso||""],
+        "Oficina":[antesPI.oficina,rPI.oficina||""],
         "Responsable de seguimiento":[antesPI.responsable,rPI.responsable||""],
         "Evidencia o seguimiento":[antesPI.evidencia,rPI.evidencia||""],
         "Observaciones":[antesPI.observaciones,rPI.observaciones||""]
@@ -1855,6 +1943,7 @@ function tryOpenMailClient(mailtoUrl){
 }
 
 async function submitNuevoForm(){
+  if(currentAccess&&currentAccess.readOnly){showToast("La sesión finalizó. Este acceso permite únicamente consultar.","warn");return;}
   applyAccessToNewForm();
   // Limpiar errores anteriores
   document.querySelectorAll(".verr").forEach(el=>el.style.display="none");
@@ -1961,6 +2050,7 @@ async function submitNuevoForm(){
 //  DESACTIVACIÓN
 // ══════════════════════════════════════════════════════
 function confirmarDesact(id,type){
+  if(currentAccess&&currentAccess.readOnly){showToast("La sesión finalizó. No se permiten desactivaciones con este acceso.","warn");return;}
   const r=(type==="ap")?AP_DATA.find(x=>x.id===id):PI_DATA.find(x=>x.id===id);
   if(!r){showToast("Registro no encontrado","err");return;}
   pendingConf={id,type};
@@ -2140,6 +2230,7 @@ function renderActividadReciente(){
 //  NAVEGACIÓN
 // ══════════════════════════════════════════════════════
 function nav(id,btn){
+  if(id==="nuevo"&&currentAccess&&currentAccess.readOnly){showToast("La sesión finalizó. Este acceso permite únicamente consultar.","warn");id="vigente";btn=null;}
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.querySelectorAll(".tnav").forEach(b=>b.classList.remove("active"));
   const sec=document.getElementById("sec-"+id);
@@ -2149,6 +2240,10 @@ function nav(id,btn){
   document.getElementById("backBar").className="back-bar"+(id==="home"?"":" show");
   if(id==="nuevo")resetNuevoForm();
   if(id==="vigente")renderVigente();
+  if(id==="accesos"){
+    if(!currentAccess||currentAccess.type!=="admin"){nav("home");return;}
+    renderAccessControl();
+  }
   window.scrollTo(0,0);
 }
 
