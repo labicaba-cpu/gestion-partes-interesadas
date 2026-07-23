@@ -1079,7 +1079,7 @@ const ACCESS_CODES={
   "RG-009-C9HT":{type:"regional",name:"Pando"}
 };
 // BLOQUEOS_PUBLICADOS: esta línea se actualiza al descargar el HTML desde Control de accesos.
-const BLOCKED_ACCESS_CODES = [];
+const BLOCKED_ACCESS_CODES = ["SA-031-MYWS"];
 let blockedAccessCodes=new Set(BLOCKED_ACCESS_CODES);
 let currentAccess=null,currentAccessCode="";
 const norm=v=>(v||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase();
