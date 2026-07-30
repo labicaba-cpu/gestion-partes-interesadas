@@ -609,6 +609,11 @@ body.read-only-mode .readonly-hide{display:none!important;}
           <select class="mti" id="fOficina" onchange="filtrar()" style="flex:0 0 auto;min-width:140px" title="Filtrar por oficina">
             <option value="">📍 Todas las oficinas</option>
           </select>
+          <select class="mti" id="fEstado" onchange="filtrar()" style="flex:0 0 auto;min-width:135px" title="Filtrar por estado del registro">
+            <option value="">● Estado: Todos</option>
+            <option value="activo">✅ Activos</option>
+            <option value="inactivo">⊘ Inactivos</option>
+          </select>
           <span class="sync-bdg" id="syncBdg">✓ — registros</span>
         </div>
         <div class="tbl-wrap">
@@ -1394,6 +1399,7 @@ function filtrar(){
   const g=document.getElementById("fGer").value;
   const sub=document.getElementById("fSubarea").value;
   const oficina=document.getElementById("fOficina")?document.getElementById("fOficina").value:"";
+  const estado=document.getElementById("fEstado")?document.getElementById("fEstado").value:"";
   const q=document.getElementById("fQ").value.toLowerCase().trim();
   const rev=document.getElementById("fRevision")?document.getElementById("fRevision").value:"";
   if(curView===0){
@@ -1402,6 +1408,8 @@ function filtrar(){
       if(g){const pi=PI_DATA.find(x=>x.parte===r.parte);if(!pi||pi.gerencia!==g)return false;}
       if(sub&&r.subarea!==sub)return false;
       if(oficina){const pi=PI_DATA.find(x=>x.id===r.id)||PI_DATA.find(x=>x.parte===r.parte);if(!pi||pi.oficina!==oficina)return false;}
+      if(estado==="activo"&&r.activo===false)return false;
+      if(estado==="inactivo"&&r.activo!==false)return false;
       if(rev==="revisado"&&!r.revisado)return false;
       if(rev==="pendiente"&&r.revisado)return false;
       if(q){const h=r.parte.toLowerCase().includes(q)||(r.requisito||"").toLowerCase().includes(q)||(r.subarea||"").toLowerCase().includes(q)||(r.tema||"").toLowerCase().includes(q)||(r.justificacion||"").toLowerCase().includes(q);if(!h)return false;}
@@ -1413,13 +1421,15 @@ function filtrar(){
       if(g&&r.gerencia!==g)return false;
       if(sub&&r.subarea!==sub)return false;
       if(oficina&&r.oficina!==oficina)return false;
+      if(estado==="activo"&&r.activo===false)return false;
+      if(estado==="inactivo"&&r.activo!==false)return false;
       if(rev){const ap=AP_DATA.find(x=>x.parte===r.parte);const isRev=ap?!!ap.revisado:false;if(rev==="revisado"&&!isRev)return false;if(rev==="pendiente"&&isRev)return false;}
       if(q){const h=r.parte.toLowerCase().includes(q)||(r.gerencia||"").toLowerCase().includes(q)||(r.subarea||"").toLowerCase().includes(q)||(r.requisito||"").toLowerCase().includes(q)||(r.proceso||"").toLowerCase().includes(q)||(r.responsable||"").toLowerCase().includes(q);if(!h)return false;}
       return true;
     });
   }
-  const apC=visibleAP().filter(r=>{if(p&&r.parte!==p)return false;if(oficina){const pi=PI_DATA.find(x=>x.id===r.id)||PI_DATA.find(x=>x.parte===r.parte);if(!pi||pi.oficina!==oficina)return false;}return true;}).length;
-  const piC=visiblePI().filter(r=>{if(p&&r.parte!==p)return false;if(g&&r.gerencia!==g)return false;if(oficina&&r.oficina!==oficina)return false;return true;}).length;
+  const apC=visibleAP().filter(r=>{if(p&&r.parte!==p)return false;if(oficina){const pi=PI_DATA.find(x=>x.id===r.id)||PI_DATA.find(x=>x.parte===r.parte);if(!pi||pi.oficina!==oficina)return false;}if(estado==="activo"&&r.activo===false)return false;if(estado==="inactivo"&&r.activo!==false)return false;return true;}).length;
+  const piC=visiblePI().filter(r=>{if(p&&r.parte!==p)return false;if(g&&r.gerencia!==g)return false;if(oficina&&r.oficina!==oficina)return false;if(estado==="activo"&&r.activo===false)return false;if(estado==="inactivo"&&r.activo!==false)return false;return true;}).length;
   document.getElementById("vc0").textContent=apC;
   document.getElementById("vc1").textContent=piC;
   document.getElementById("syncBdg").textContent="✓ "+filtered.length+" registro"+(filtered.length!==1?"s":"");
