@@ -420,10 +420,14 @@ body{background:var(--off);}
 /* ══ MATRIZ VIGENTE (consulta, solo lectura) ══ */
 .vig-hero{background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 60%,var(--b2) 100%);border-radius:16px;padding:22px 26px;color:white;margin-bottom:18px;}
 .vig-hero h2{font-size:19px;font-weight:700;margin-bottom:4px;}
+.vig-docmeta{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.92);margin:2px 0 7px;letter-spacing:.2px;}
 .vig-hero p{font-size:12px;color:rgba(255,255,255,.8);margin:0;}
 .vig-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
 .vig-search{flex:1;min-width:220px;padding:10px 14px;border:1.5px solid var(--lgray);border-radius:9px;font-size:12.5px;outline:none;transition:border .2s;}
 .vig-search:focus{border-color:var(--blue);}
+.vig-filters{display:grid;grid-template-columns:repeat(3,minmax(170px,1fr));gap:10px;width:100%;}
+.vig-filter{padding:10px 12px;border:1.5px solid var(--lgray);border-radius:9px;background:#fff;color:var(--dark);font-size:12px;outline:none;}
+.vig-filter:focus{border-color:var(--blue);}
 .vig-count{font-size:12px;color:var(--dark);font-weight:600;white-space:nowrap;}
 .vig-count b{color:var(--amber);}
 .vig-table-card{background:white;border:1px solid var(--lgray);border-radius:13px;overflow:hidden;}
@@ -453,6 +457,7 @@ body.read-only-mode .readonly-banner{display:block;}
 body.read-only-mode .readonly-hide{display:none!important;}
 @media (max-width:640px){
   .vig-detail-grid{grid-template-columns:1fr 1fr;}
+  .vig-filters{grid-template-columns:1fr;}
   .vig-detail-grid .wide{grid-column:span 2;}
   .vig-table{font-size:11px;}
 }
@@ -938,12 +943,25 @@ body.read-only-mode .readonly-hide{display:none!important;}
   <!-- MATRIZ VIGENTE (consulta, solo lectura) -->
   <div class="section" id="sec-vigente">
     <div class="vig-hero">
-      <h2>📋 Matriz de Partes Interesadas — Vigente</h2>
+      <h2>📋 Matriz de Partes Interesadas</h2>
+      <div class="vig-docmeta">A-002 · V:12 · Jul-2026 · Uso Interno</div>
       <p>Consulta de las partes interesadas activas, sus requisitos y responsables. Vista de solo lectura.</p>
     </div>
     <div class="vig-toolbar">
       <input type="text" class="vig-search" id="vigQ" placeholder="🔍 Buscar por parte interesada o requisito..." oninput="renderVigente()">
       <div class="vig-count" id="vigCount">0 partes interesadas · 0 requisitos identificados</div>
+      <button class="tbtn green" type="button" onclick="descargarMatrizVigenteHTML()">⬇ Descargar matriz actualizada</button>
+      <div class="vig-filters">
+        <select class="vig-filter" id="vigGerencia" onchange="actualizarFiltrosVigentes('gerencia')">
+          <option value="">Todas las gerencias / áreas</option>
+        </select>
+        <select class="vig-filter" id="vigSubarea" onchange="renderVigente()">
+          <option value="">Todas las sub-áreas</option>
+        </select>
+        <select class="vig-filter" id="vigOficina" onchange="renderVigente()">
+          <option value="">Todas las oficinas</option>
+        </select>
+      </div>
     </div>
     <div class="vig-table-card">
       <table class="vig-table" id="vigTable">
@@ -952,7 +970,7 @@ body.read-only-mode .readonly-hide{display:none!important;}
         </thead>
         <tbody id="vigTbody"></tbody>
       </table>
-      <div class="vig-empty" id="vigEmpty" style="display:none;">Sin resultados. Ajusta el texto de búsqueda.</div>
+      <div class="vig-empty" id="vigEmpty" style="display:none;">Sin resultados. Ajusta la búsqueda o los filtros seleccionados.</div>
     </div>
   </div>
 
@@ -2162,10 +2180,42 @@ function openDet(id){nav("matriz");swV(1);setTimeout(()=>selRow(id,"pi"),150);}
 //  MATRIZ VIGENTE (consulta, solo lectura — lee PI_DATA directamente)
 // ══════════════════════════════════════════════════════
 function escVig(s){return (s===null||s===undefined||s==="")?"":String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function opcionesVigentes(select,items,etiqueta,valorActual){
+  if(!select)return;
+  const valor=valorActual!==undefined?valorActual:select.value;
+  select.innerHTML=`<option value="">${etiqueta}</option>`+items.map(v=>`<option value="${escVig(v)}">${escVig(v)}</option>`).join("");
+  if(items.includes(valor))select.value=valor;
+}
+function actualizarFiltrosVigentes(origen){
+  const activos=visiblePI().filter(r=>r.activo!==false);
+  const ger=document.getElementById("vigGerencia");
+  const sub=document.getElementById("vigSubarea");
+  const ofi=document.getElementById("vigOficina");
+  const gerencia=ger?ger.value:"";
+  if(origen!=="gerencia"){
+    opcionesVigentes(ger,[...new Set(activos.map(r=>r.gerencia).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es")),"Todas las gerencias / áreas",gerencia);
+  }
+  const subActual=origen==="gerencia"?"":(sub?sub.value:"");
+  const baseSub=gerencia?activos.filter(r=>r.gerencia===gerencia):activos;
+  opcionesVigentes(sub,[...new Set(baseSub.map(r=>r.subarea).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es")),"Todas las sub-áreas",subActual);
+  opcionesVigentes(ofi,[...new Set(activos.map(r=>r.oficina).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es")),"Todas las oficinas",ofi?ofi.value:"");
+  renderVigente();
+}
 function renderVigente(){
   const qEl=document.getElementById("vigQ");
   const q=(qEl?qEl.value:"").toLowerCase().trim();
+  const gerencia=document.getElementById("vigGerencia")?.value||"";
+  const subarea=document.getElementById("vigSubarea")?.value||"";
+  const oficina=document.getElementById("vigOficina")?.value||"";
+  const gerSelect=document.getElementById("vigGerencia");
+  if(gerSelect&&gerSelect.options.length===1){
+    actualizarFiltrosVigentes();
+    return;
+  }
   const rows=visiblePI().filter(r=>r.activo!==false).filter(r=>{
+    if(gerencia&&r.gerencia!==gerencia)return false;
+    if(subarea&&r.subarea!==subarea)return false;
+    if(oficina&&r.oficina!==oficina)return false;
     if(!q)return true;
     const hay=((r.parte||"")+" "+(r.requisito||"")).toLowerCase();
     return hay.includes(q);
@@ -2190,8 +2240,8 @@ function renderVigente(){
     detailTr.className="vig-detail";
     detailTr.style.display="none";
     detailTr.innerHTML=`<td colspan="4"><div class="vig-detail-grid">
-      <div><h4>Gerencia</h4><p>${escVig(r.gerencia)}</p></div>
-      <div><h4>Área / Subárea</h4><p>${escVig(r.subarea)}</p></div>
+      <div><h4>Gerencia / Área</h4><p>${escVig(r.gerencia)}</p></div>
+      <div><h4>Sub-Área</h4><p>${escVig(r.subarea)}</p></div>
       <div><h4>Proceso</h4><p>${escVig(r.proceso)}</p></div>
       <div><h4>Oficina</h4><p>${escVig(r.oficina)}</p></div>
       <div class="wide"><h4>Evidencia o Seguimiento</h4><p>${escVig(r.evidencia)}</p></div>
@@ -2208,6 +2258,78 @@ function renderVigente(){
     tbody.appendChild(tr);
     tbody.appendChild(detailTr);
   });
+}
+
+function filasMatrizVigenteFiltradas(){
+  const q=(document.getElementById("vigQ")?.value||"").toLowerCase().trim();
+  const gerencia=document.getElementById("vigGerencia")?.value||"";
+  const subarea=document.getElementById("vigSubarea")?.value||"";
+  const oficina=document.getElementById("vigOficina")?.value||"";
+  return visiblePI().filter(r=>r.activo!==false).filter(r=>{
+    if(gerencia&&r.gerencia!==gerencia)return false;
+    if(subarea&&r.subarea!==subarea)return false;
+    if(oficina&&r.oficina!==oficina)return false;
+    if(!q)return true;
+    return ((r.parte||"")+" "+(r.requisito||"")).toLowerCase().includes(q);
+  });
+}
+
+function descargarMatrizVigenteHTML(){
+  const rows=visiblePI().filter(r=>r.activo!==false);
+  if(!rows.length){
+    showToast("No existen registros activos para descargar.","warn");
+    return;
+  }
+  const filtroInicial={
+    gerencia:document.getElementById("vigGerencia")?.value||"",
+    subarea:document.getElementById("vigSubarea")?.value||"",
+    oficina:document.getElementById("vigOficina")?.value||"",
+    busqueda:document.getElementById("vigQ")?.value.trim()||""
+  };
+  const fecha=new Date();
+  const fechaArchivo=fecha.toISOString().slice(0,10);
+  const fechaVisible=fecha.toLocaleString("es-BO",{dateStyle:"long",timeStyle:"short"});
+  const datosJSON=JSON.stringify(rows).replace(/</g,"\\u003c");
+  const filtroJSON=JSON.stringify(filtroInicial).replace(/</g,"\\u003c");
+  const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Matriz de Partes Interesadas - A-002</title>
+  <style>
+  :root{--navy:#082b4f;--blue:#0877c9;--line:#dce5ed;--soft:#f5f8fb;--text:#17324a}
+  *{box-sizing:border-box}body{margin:0;padding:28px;font-family:Arial,sans-serif;color:var(--text);background:#eef3f7}
+  main{max-width:1800px;margin:auto;background:#fff;border-radius:14px;padding:26px;box-shadow:0 4px 20px #16324a1a}
+  h1{margin:0;color:var(--navy);font-size:25px}.meta{margin:7px 0;color:var(--blue);font-weight:700}.desc{margin:0 0 14px;color:#53697b}
+  .filters{display:grid;grid-template-columns:minmax(220px,2fr) repeat(3,minmax(170px,1fr)) auto;gap:9px;padding:12px;background:var(--soft);border:1px solid var(--line);border-radius:8px}
+  .filters input,.filters select,.filters button{width:100%;min-height:36px;border:1px solid #bfcdda;border-radius:7px;background:#fff;color:var(--text);padding:7px 9px;font-size:12px}.filters button{width:auto;background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700;cursor:pointer}
+  .summary{margin:13px 0;font-size:12px;color:#53697b}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:9px}
+  table{border-collapse:collapse;width:100%;min-width:1900px;font-size:11px}th{position:sticky;top:0;background:var(--navy);color:white;text-align:left;padding:9px;border-right:1px solid #ffffff2b}
+  td{vertical-align:top;padding:8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);white-space:pre-line;line-height:1.35}tbody tr:nth-child(even){background:var(--soft)}
+  footer{margin-top:14px;font-size:10px;color:#728494}@media(max-width:1000px){.filters{grid-template-columns:1fr 1fr}.filters button{width:100%}}@media print{body{padding:0;background:#fff}main{box-shadow:none;padding:0}.filters{display:none}.table-wrap{overflow:visible}table{min-width:0;font-size:7px}th,td{padding:4px}}
+  </style></head><body><main>
+  <h1>📋 Matriz de Partes Interesadas</h1><div class="meta">A-002 · V:12 · Jul-2026 · Uso Interno</div>
+  <p class="desc">Consulta de las partes interesadas activas, sus requisitos y responsables. Vista de solo lectura.</p>
+  <div class="filters"><input id="q" type="search" placeholder="Buscar por parte interesada o requisito..."><select id="ger"><option value="">Todas las gerencias / áreas</option></select><select id="sub"><option value="">Todas las sub-áreas</option></select><select id="ofi"><option value="">Todas las oficinas</option></select><button id="limpiar" type="button">Restablecer</button></div>
+  <div class="summary" id="summary"></div>
+  <div class="table-wrap"><table><thead><tr><th>ID</th><th>Parte Interesada</th><th>Gerencia / Área</th><th>Sub-Área</th><th>Oficina</th><th>Proceso</th><th>Requisito Identificado</th><th>Responsable de Seguimiento</th><th>Evidencia / Seguimiento</th><th>Tema Asociado</th><th>Referencia Normativa / Criterio Aplicable</th><th>Observaciones</th></tr></thead><tbody id="body"></tbody></table></div>
+  <footer>Documento generado desde el módulo “Ver matriz vigente” el ${escVig(fechaVisible)}.</footer></main>
+  <script>
+  const DATA=${datosJSON}, INICIAL=${filtroJSON};
+  const q=document.getElementById("q"),ger=document.getElementById("ger"),sub=document.getElementById("sub"),ofi=document.getElementById("ofi"),body=document.getElementById("body"),summary=document.getElementById("summary");
+  const esc=s=>s==null?"":String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;");
+  const unicos=(campo,base=DATA)=>[...new Set(base.map(r=>r[campo]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+  function llenar(sel,valores,etiqueta,valor){sel.innerHTML='<option value="">'+etiqueta+'</option>'+valores.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join("");if(valores.includes(valor))sel.value=valor;}
+  function actualizarSub(valor){const base=ger.value?DATA.filter(r=>r.gerencia===ger.value):DATA;llenar(sub,unicos("subarea",base),"Todas las sub-áreas",valor||"");}
+  function render(){const texto=q.value.toLowerCase().trim();const filas=DATA.filter(r=>(!ger.value||r.gerencia===ger.value)&&(!sub.value||r.subarea===sub.value)&&(!ofi.value||r.oficina===ofi.value)&&(!texto||((r.parte||"")+" "+(r.requisito||"")).toLowerCase().includes(texto)));body.innerHTML=filas.map(r=>'<tr><td>'+esc(r.id)+'</td><td>'+esc(r.parte)+'</td><td>'+esc(r.gerencia)+'</td><td>'+esc(r.subarea)+'</td><td>'+esc(r.oficina)+'</td><td>'+esc(r.proceso)+'</td><td>'+esc(r.requisito)+'</td><td>'+esc(r.responsable)+'</td><td>'+esc(r.evidencia)+'</td><td>'+esc(r.tema)+'</td><td>'+esc(r.normativa)+'</td><td>'+esc(r.observaciones)+'</td></tr>').join("");summary.innerHTML='<b>'+new Set(filas.map(r=>r.parte).filter(Boolean)).size+'</b> parte(s) interesada(s) · <b>'+filas.length+'</b> requisito(s) identificado(s)';}
+  llenar(ger,unicos("gerencia"),"Todas las gerencias / áreas",INICIAL.gerencia);llenar(ofi,unicos("oficina"),"Todas las oficinas",INICIAL.oficina);actualizarSub(INICIAL.subarea);q.value=INICIAL.busqueda;
+  ger.addEventListener("change",()=>{actualizarSub("");render()});sub.addEventListener("change",render);ofi.addEventListener("change",render);q.addEventListener("input",render);document.getElementById("limpiar").addEventListener("click",()=>{q.value="";ger.value="";ofi.value="";actualizarSub("");render()});render();
+  <\/script></body></html>`;
+  const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=`A-002_Matriz_Partes_Interesadas_${fechaArchivo}.html`;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  showToast(`Matriz HTML interactiva descargada — ${rows.length} requisito(s) activo(s)`,"ok");
 }
 
 // ══════════════════════════════════════════════════════
