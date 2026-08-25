@@ -720,7 +720,7 @@ body.read-only-mode .readonly-hide{display:none!important;}
                 Seleccione el tema principal relacionado con la información registrada.<br>
                 <span class="eg">Ej.: Legal/regulatorio, cliente, operativo, comercial, financiero, tecnológico, seguridad de la información, ambiental, entre otros.</span>
               </div>
-              <select class="nfs" id="n_tema">
+              <select class="nfs" id="n_tema" onchange="toggleOtroTemaNuevo()">
                 <option value="">— Seleccione un tema —</option>
                 <option>Regulatorio / legal</option>
                 <option>Climático / ambiental</option>
@@ -733,6 +733,10 @@ body.read-only-mode .readonly-hide{display:none!important;}
                 <option>Otro</option>
               </select>
               <div class="verr" id="verr_tema" style="display:none">⚠ Seleccione un tema.</div>
+              <div id="n_tema_otro_wrap" style="display:none;margin-top:10px">
+                <input type="text" class="nfi" id="n_tema_otro" maxlength="150" placeholder="Especifique el tema asociado">
+                <div class="verr" id="verr_tema_otro" style="display:none">⚠ Especifique el tema asociado.</div>
+              </div>
             </div>
 
         </div><!-- /bloque único -->
@@ -1678,7 +1682,11 @@ function startEdit(id,type){
   else{rPI=PI_DATA.find(x=>x.id===id);if(!rPI)return;rAP=AP_DATA.find(x=>x.parte===rPI.parte);}
   const ap=rAP||{},pi=rPI||{};
   const parte=ap.parte||pi.parte||"";
+  const temaActual=ap.tema||pi.tema||"";
+  const temaSeleccionado=TEMAS_LIST.includes(temaActual)?temaActual:(temaActual?"Otro":"");
+  const temaOtroActual=temaActual&&!TEMAS_LIST.includes(temaActual)?temaActual:"";
   const opts=(list,cur)=>list.map(v=>`<option${cur===v?" selected":""}>${v}</option>`).join("");
+  const attr=v=>String(v||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   const pills=(gid,hid,cur,opts2)=>`<div class="epill-group" id="${gid}">${opts2.map(([v,c])=>`<span class="epill${cur===v?" "+c:""}" onclick="selEPill('${gid}',this,'${c}','${hid}','${v}')">${v}</span>`).join("")}</div><input type="hidden" id="${hid}" value="${cur||""}">`;
 
   panel.innerHTML=`
@@ -1697,7 +1705,7 @@ function startEdit(id,type){
         <div class="df"><div class="dlbl">Necesidad / Requisito identificado *</div><textarea class="ef-text" id="e_requisito" rows="3">${ap.requisito||pi.requisito||""}</textarea></div>
         <div class="drow2">
           <div class="df"><div class="dlbl">Fuente de identificación</div><input class="ef-text" id="e_fuente" value="${ap.fuente||""}" placeholder="Ej: encuesta, reclamo" style="resize:none"></div>
-          <div class="df"><div class="dlbl">Tema asociado</div><select class="ef-select" id="e_tema"><option value="">— Selecciona —</option>${opts(TEMAS_LIST,ap.tema||pi.tema)}</select></div>
+          <div class="df"><div class="dlbl">Tema asociado</div><select class="ef-select" id="e_tema" onchange="toggleOtroTemaEdicion()"><option value="">— Selecciona —</option>${opts(TEMAS_LIST,temaSeleccionado)}</select><div id="e_tema_otro_wrap" style="display:${temaSeleccionado==="Otro"?"block":"none"};margin-top:8px"><input class="ef-text" id="e_tema_otro" maxlength="150" value="${attr(temaOtroActual)}" placeholder="Especifique el tema asociado" style="resize:none"></div></div>
         </div>
       </div>
       <!-- 2. Contexto de Aplicación -->
@@ -1757,6 +1765,29 @@ function startEdit(id,type){
       <button class="det-btn cancel" onclick="cancelEdit(${id},'${type}')">Cancelar</button>
       <button class="det-btn save" onclick="guardarCambios(${id},'${type}')">💾 Guardar cambios</button>
     </div>`;
+  toggleOtroTemaEdicion();
+}
+
+function toggleOtroTemaNuevo(){
+  const select=document.getElementById("n_tema");
+  const wrap=document.getElementById("n_tema_otro_wrap");
+  const input=document.getElementById("n_tema_otro");
+  if(!select||!wrap||!input)return;
+  const mostrar=select.value==="Otro";
+  wrap.style.display=mostrar?"block":"none";
+  input.required=mostrar;
+  if(!mostrar){input.value="";const err=document.getElementById("verr_tema_otro");if(err)err.style.display="none";}
+}
+
+function toggleOtroTemaEdicion(){
+  const select=document.getElementById("e_tema");
+  const wrap=document.getElementById("e_tema_otro_wrap");
+  const input=document.getElementById("e_tema_otro");
+  if(!select||!wrap||!input)return;
+  const mostrar=select.value==="Otro";
+  wrap.style.display=mostrar?"block":"none";
+  input.required=mostrar;
+  if(!mostrar)input.value="";
 }
 
 function selEPill(gid,el,cls,hid,val){
@@ -1780,6 +1811,9 @@ function guardarCambios(id,type){
   const gv=fid=>{const el=document.getElementById(fid);return el?el.value.trim():"";};
   const requisito=gv("e_requisito");
   if(!requisito){showToast('El campo "Requisito identificado" es obligatorio',"err");return;}
+  const temaSeleccionado=gv("e_tema");
+  const tema=temaSeleccionado==="Otro"?gv("e_tema_otro"):temaSeleccionado;
+  if(temaSeleccionado==="Otro"&&!tema){showToast('Especifique el tema asociado en el campo "Otro"',"err");const el=document.getElementById("e_tema_otro");if(el)el.focus();return;}
   if(currentAccess&&currentAccess.type==="area"&&!processAllowed(gv("e_proceso"))){showToast("El proceso seleccionado no pertenece al Área autorizada","err");return;}
   let rAP,rPI;
   if(type==="ap"){rAP=AP_DATA.find(x=>x.id===id);rPI=PI_DATA.find(x=>x.id===rAP.id)||PI_DATA.find(x=>x.parte===rAP.parte);}
@@ -1794,7 +1828,7 @@ function guardarCambios(id,type){
       const antesAP={requisito:rAP.requisito||"",subarea:rAP.subarea||"",fuente:rAP.fuente||"",tema:rAP.tema||"",cc:rAP.cc||"",alcance:rAP.alcance||"",sgc:rAP.sgc||"",justificacion:rAP.justificacion||"",resultado:rAP.resultado||""};
       const estadoAnterior=eraAnalizado?estadoAntesAP:null;
       const eSgc=gv("e_sgc");const eRes=eSgc==="Sí"?"Pasa a Matriz":eSgc==="Parcial"?"Parcial / Fuera del SGC":eSgc==="No"?"No pasa":rAP.resultado||"";
-      Object.assign(rAP,{requisito,subarea:gv("e_ap_subarea")||rAP.subarea,fuente:gv("e_fuente"),tema:gv("e_tema"),cc:gv("e_cc"),alcance:gv("e_alcance"),sgc:eSgc,justificacion:gv("e_justificacion"),resultado:eRes});
+      Object.assign(rAP,{requisito,subarea:gv("e_ap_subarea")||rAP.subarea,fuente:gv("e_fuente"),tema,cc:gv("e_cc"),alcance:gv("e_alcance"),sgc:eSgc,justificacion:gv("e_justificacion"),resultado:eRes});
       rAP.modificadoPor=usuario;rAP.ultimaModificacion=fecha;
       if(eraAnalizado){
         rAP.revisado=false;rAP.requiereNuevaRevision=true;
@@ -1822,10 +1856,11 @@ function guardarCambios(id,type){
       });
     }
     if(rPI){
-      const antesPI={requisito:rPI.requisito||"",normativa:rPI.normativa||"",proceso:rPI.proceso||"",oficina:rPI.oficina||"",responsable:rPI.responsable||"",evidencia:rPI.evidencia||"",observaciones:rPI.observaciones||""};
-      Object.assign(rPI,{requisito,normativa:gv("e_normativa"),proceso:gv("e_proceso"),oficina:gv("e_oficina"),responsable:gv("e_responsable"),evidencia:gv("e_evidencia"),observaciones:gv("e_observaciones")});
+      const antesPI={requisito:rPI.requisito||"",tema:rPI.tema||"",normativa:rPI.normativa||"",proceso:rPI.proceso||"",oficina:rPI.oficina||"",responsable:rPI.responsable||"",evidencia:rPI.evidencia||"",observaciones:rPI.observaciones||""};
+      Object.assign(rPI,{requisito,tema,normativa:gv("e_normativa"),proceso:gv("e_proceso"),oficina:gv("e_oficina"),responsable:gv("e_responsable"),evidencia:gv("e_evidencia"),observaciones:gv("e_observaciones")});
       const camposPI={
         "Requisito identificado":[antesPI.requisito,rPI.requisito||""],
+        "Tema asociado":[antesPI.tema,rPI.tema||""],
         "Referencia normativa o criterio aplicable":[antesPI.normativa,rPI.normativa||""],
         "Proceso":[antesPI.proceso,rPI.proceso||""],
         "Oficina":[antesPI.oficina,rPI.oficina||""],
@@ -1935,7 +1970,7 @@ function applyAccessToNewForm(){
 // Limpiar formulario nuevo
 function resetNuevoForm(){
   // Campos texto/textarea
-  ["n_parte","n_requisito","n_fuente","n_normativa","n_evidencia","n_responsable","n_obs","n_justif","n_cc","n_sgc","n_alcance","n_resultado"]
+  ["n_parte","n_requisito","n_fuente","n_normativa","n_evidencia","n_responsable","n_obs","n_justif","n_cc","n_sgc","n_alcance","n_resultado","n_tema_otro"]
     .forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
   // Selects
   ["n_tema","n_gerencia","n_subarea","n_proceso","n_oficina"]
@@ -1952,6 +1987,7 @@ function resetNuevoForm(){
   // Errores
   document.querySelectorAll(".verr").forEach(el=>el.style.display="none");
   document.querySelectorAll(".qc").forEach(el=>el.style.borderColor="");
+  toggleOtroTemaNuevo();
   // Mostrar form, ocultar success
   document.getElementById("nregMain").classList.remove("hide");
   document.getElementById("nregSuccess").classList.remove("show");
@@ -2029,7 +2065,12 @@ async function submitNuevoForm(){
 
   const parte    =req("n_parte","verr_parte");
   const requisito=req("n_requisito","verr_requisito");
-  const tema     =req("n_tema","verr_tema");
+  const temaSeleccionado=req("n_tema","verr_tema");
+  let tema=temaSeleccionado;
+  if(temaSeleccionado==="Otro"){
+    tema=gv("n_tema_otro");
+    if(!tema){document.getElementById("verr_tema_otro").style.display="block";document.getElementById("qc_tema").style.borderColor="var(--red)";ok=false;}
+  }
   const responsable=req("n_responsable","verr_responsable");
   const cc       =req("n_cc","verr_cc");
   const sgc      =req("n_sgc","verr_sgc");
